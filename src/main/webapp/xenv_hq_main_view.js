@@ -1,7 +1,6 @@
-import newSearch from "./search.js";
-import {DataSource} from "./xenv_models.js";
-import newToolbar from "./attrs_monitor_toolbar.js";
-import {newTangoAttributeProxy} from "./xenv.js";
+import newSearch from "/waltz/resources/webix_widgets/search.js";
+import newToolbar from "/waltz/resources/webix_widgets/attrs_monitor_toolbar.js";
+import {newTangoAttributeProxy} from "./index.js";
 
 const dataSourcesView = {
     padding: 15,
@@ -22,7 +21,7 @@ const dataSourcesView = {
             type: {
                 height: "auto",
                 markCheckbox(obj){
-                    return "<span class='check webix_icon fa-"+(obj.markCheckbox?"check-":"")+"square-o'></span>";
+                    return "<span class='check webix_list_icon mdi mdi-"+(obj.markCheckbox?"check-box-outline":"checkbox-blank-outline")+"'></span>";
                 }
             },
             onClick:{
@@ -99,8 +98,8 @@ const xenvServersView = {
             on: {
                 onItemClick(id) {
                     const device = this.getItem(id).device;
-                    PlatformContext.devices.setCursor(device.id);
-
+                    PlatformContext.loadAndSetDevice(device.id);
+                    
                     PlatformApi.PlatformUIController().expandDeviceTree();
                 },
                 onItemDblClick(id) {

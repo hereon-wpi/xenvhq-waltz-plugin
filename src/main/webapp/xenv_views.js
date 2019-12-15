@@ -4,7 +4,7 @@ import {newStatusServerViewBody} from "./xenv_status_server_view.js";
 import {newCamelIntegrationViewBody} from "./xenv_camel_view.js";
 import {newPredatorViewBody} from "./xenv_predator_view.js";
 import {newDfsViewBody} from "./xenv_dfs_view.js";
-import {codemirror_textarea} from "./scripting_console.js";
+import {codemirror_textarea} from "/waltz/resources/webix_widgets/scripting_console.js";
 
 const xml = webix.protoUI({
     name: "xml",
@@ -81,10 +81,9 @@ export const xenvProfileSettings = {
             cols: [
                 {},
                 {
-                    view: "button",
+                    view: "icon",
                     id: 'btnAddProfile',
-                    type: "icon",
-                    icon: "save",
+                    icon: "mdi mdi-content-save",
                     maxWidth: 30,
                     click: async function () {
                         const $$frm = this.getFormView();
@@ -96,10 +95,9 @@ export const xenvProfileSettings = {
                     }
                 },
                 {
-                    view: "button",
+                    view: "icon",
                     id: 'btnRmProfile',
-                    type: "icon",
-                    icon: "trash",
+                    icon: "mdi mdi-delete",
                     maxWidth: 30,
                     click: async function () {
                         const $$frm = this.getFormView();
@@ -131,9 +129,8 @@ export const xenvHqToolbar = {
             }
         },
         {
-            view: "button",
-            type: "icon",
-            icon: "plus",
+            view: "icon",
+            icon: "mdi mdi-plus",
             maxWidth: 30,
             click: function () {
                 const $$frmProfile = this.getTopParentView().$$('frmProfileSettings');
@@ -144,9 +141,8 @@ export const xenvHqToolbar = {
             }
         },
         {
-            view: "button",
-            type: "icon",
-            icon: "refresh",
+            view: "icon",
+            icon: "mdi mdi-refresh",
             maxWidth: 30,
             click: async function () {
                 const $$hq = this.getTopParentView();
@@ -159,9 +155,8 @@ export const xenvHqToolbar = {
         },
         {},
         {
-            view: "button",
-            type: "icon",
-            icon: "cog",
+            view: "icon",
+            icon: "mdi mdi-settings",
             maxWidth: 30,
             click: function () {
                 const $$HQsettings = this.getTopParentView().$$("hq-settings");

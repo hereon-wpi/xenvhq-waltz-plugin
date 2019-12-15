@@ -4,7 +4,7 @@
  * @since 3/27/19
  */
 import {newXenvServerLog} from "./xenv_views.js";
-import {codemirror_textarea} from "./scripting_console.js";
+import {codemirror_textarea} from "/waltz/resources/webix_widgets/scripting_console.js";
 
 
 const meta_yaml = webix.protoUI({

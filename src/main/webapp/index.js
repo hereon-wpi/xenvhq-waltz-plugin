@@ -44,44 +44,6 @@ export function newTangoAttributeProxy(rest, host, device, attr) {
     };
 }
 
-export const XenvHqController = class extends MVC.Controller {
-    buildUI(platform_api) {
-        // platform_api.ui_builder.add_mainview_item(newXenvSVGTab());
-        platform_api.ui_builder.add_mainview_item(newXenvHeadQuarterTab());
-    }
-    /**
-     *
-     * @param {PlatformApi} platform_api
-     */
-    async initialize(platform_api){
-        const $$hq = $$('hq');
-
-
-        // const tango_host = await platform_api.context.rest.fetchHost("hzgxenvtest:10000");
-        // $$hq.main = await tango_host.fetchDevice("development/hq/main");
-        // $$hq.configurationManager = await tango_host.fetchDevice("development/hq/configuration");
-        //
-        // const camel = new XenvServer("Camel", "UNKNOWN", "UNKNOWN", "UNKNOWN", await tango_host.fetchDevice("test/camel/0"));
-        // const predator = new XenvServer("PreExperimentDataCollector", "3.1", "UNKNOWN", "UNKNOWN", await tango_host.fetchDevice("test/predator/0"));
-        // const data_format_server = new XenvServer("DataFormatServer", "3.1", "UNKNOWN", "UNKNOWN", await tango_host.fetchDevice("test/dfs/0"));
-        // const status_server = new XenvServer("StatusServer", "3.1", "UNKNOWN", "UNKNOWN", await tango_host.fetchDevice("test/status_server/0"));
-        //
-        //
-        // $$hq.$$('listServers').add(camel);
-        // $$hq.$$('listServers').add(status_server);
-        // $$hq.$$('listServers').add(data_format_server);
-        // $$hq.$$('listServers').add(predator);
-        //
-        // $$('hq').$$('listDataSources').add(new DataSource("tango://hzgxenvtest:10000/sys/tg_test/1/double_scalar", "/entry/hardware/motor1","log","200","float64"));
-        // $$('hq').$$('listDataSources').add(new DataSource("tango://hzgxenvtest:10000/sys/tg_test/1/long_scalar", "/entry/hardware/motor2","log","0","int64"));
-
-        // $$hq.start();
-    }
-};
-
-//disable Xenv widget for master
-XenvHqController.initialize();
-
 const xenvHq = webix.protoUI({
     name: "xenv-hq",
     profile: null,
@@ -285,7 +247,7 @@ const xenvHq = webix.protoUI({
                     OpenAjax.hub.publish(`${server.name}.update.status`, event);
                 }.bind(this),
                 function (error) {
-                    webix.message(error.data, "error")
+                    console.error(error.data);
                 }.bind(this));
 
             PlatformContext.subscription.subscribe({
@@ -301,7 +263,7 @@ const xenvHq = webix.protoUI({
                     OpenAjax.hub.publish(`${server.name}.update.state`, event);
                 }.bind(this),
                 function (error) {
-                    webix.message(error.data, "error")
+                    console.error(error.data);
                 }.bind(this));
         },
         /**
@@ -407,7 +369,7 @@ const xenvHq = webix.protoUI({
 
 export function newXenvHeadQuarterTab(){
     return {
-        header: "<span class='webix_icon fa-cubes'></span> Xenv HQ",
+        header: "<span class='webix_icon mdi mdi-cube-scan'></span> Xenv HQ",
         borderless: true,
         body:
         {

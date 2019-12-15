@@ -4,8 +4,8 @@
  * @since 04.09.2019
  */
 
-import newSearch from "./search.js";
-import {newTangoAttributeProxy} from "./xenv.js";
+import newSearch from "/waltz/resources/webix_widgets/search.js";
+import {newTangoAttributeProxy} from "./index.js";
 import {DataSource} from "./xenv_models.js";
 
 /**
@@ -62,7 +62,7 @@ function newDataSourceForm(parent){
                 cols: [
                     {},
                     {
-                        view: "button", width: 30, type: "icon", icon: "save", tooltip: "save", click() {
+                        view: "icon", width: 30, icon: "mdi mdi-content-save", tooltip: "save", click() {
                             const $$form = this.getFormView();
                             // $$form.save();
 
@@ -78,7 +78,7 @@ function newDataSourceForm(parent){
                         }
                     },
                     {
-                        view: "button", width: 30, type: "icon", icon: "clone", tooltip: "clone", click(){
+                        view: "icon", width: 30, icon: "mdi mdi-checkbox-multiple-blank-outline", tooltip: "clone", click(){
                             const $$form = this.getFormView();
                             if(!$$form.validate()) return;
 
@@ -89,7 +89,7 @@ function newDataSourceForm(parent){
                         }
                     },
                     {
-                        view: "button", width: 30, type: "icon", icon: "trash", tooltip: "delete", click(){
+                        view: "icon", width: 30, icon: "mdi mdi-delete", tooltip: "delete", click(){
                             const $$form = this.getFormView();
                             const id = $$form.getValues().id;
                             parent.deleteDataSource({id})
@@ -197,10 +197,9 @@ function newDataSourceCollectionForm(parent){
                 cols: [
                     {},
                     {
-                        view: "button",
+                        view: "icon",
                         id: 'btnAddProfile',
-                        type: "icon",
-                        icon: "save",
+                        icon: "mdi mdi-content-save",
                         maxWidth: 30,
                         click() {
                             const $$frm = this.getFormView();
@@ -225,10 +224,9 @@ function newDataSourceCollectionForm(parent){
                         }
                     },
                     {
-                        view: "button",
+                        view: "icon",
                         id: 'btnRmProfile',
-                        type: "icon",
-                        icon: "trash",
+                        icon: "mdi mdi-delete",
                         maxWidth: 30,
                         click() {
                             const $$frm = this.getFormView();
@@ -280,9 +278,8 @@ function newToolbar(parent){
                 }
             },
             {
-                view: "button",
-                type: "icon",
-                icon: "plus",
+                view: "icon",
+                icon: "mdi mdi-plus",
                 click(){
                     // const collection = parent.$$('selectDataSources').getValue();
                     // if(!collection) webix.message("<span class='webix_icon fa-bell'></span> Please specify the collection!");
