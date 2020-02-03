@@ -29,16 +29,6 @@ const dataSourcesView = {
                     const item = this.getItem(id);
                     item.markCheckbox = item.markCheckbox?0:1;
                     this.updateItem(id, item);
-                    //update profile on the client side
-                    //TODO refactor
-                    const profile = this.getTopParentView().getTopParentView()
-                        .profile.getValues();
-                    const collection = profile.configuration.collections.find(collection => collection.id === id);
-                    if(collection !== undefined) collection.value = item.markCheckbox;
-                    else profile.configuration.collections.push({
-                        id,
-                        value: item.markCheckbox
-                    });
                 }
             },
             on: {
@@ -46,7 +36,18 @@ const dataSourcesView = {
                  * tick checkboxes
                  */
                 onAfterLoad(){
-                    this.getTopParentView().applyProfile(this.getTopParentView().getTopParentView().profile.getValues());
+                    this.getTopParentView().config.configurationManager.getSelectedCollections().then(v => {
+                            v
+                                .map(item => {
+                                    const {id, value} = item;
+                                    return {id, markCheckbox: value}
+                                })
+                                .forEach(item => {
+                                        this.updateItem(item.id, item)
+                                    }
+                                )
+                        }
+                    )
                 }
             }
         }
@@ -131,14 +132,6 @@ const main = webix.protoUI({
     },
     get data(){
         return this.$$('listCollections');
-    },
-    applyProfile(profile){
-        profile.configuration.collections.forEach(collection => {
-            if(this.data.getItem(collection.id) !== undefined)
-                this.data.updateItem(collection.id,{
-                    markCheckbox: collection.value
-                });
-        });
     },
     resetDataSources(){
         this.$$('listCollections').data.each(item => {

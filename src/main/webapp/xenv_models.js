@@ -81,6 +81,11 @@ export class ConfigurationManager extends XenvServer {
         super("ConfigurationManager",undefined,"UNKNOWN", "Proxy is not initialized", null)
     }
 
+    async getSelectedCollections() {
+        if (this.device === null) return "";
+        return JSON.parse(await this.fetchAttrValue("selectedCollections"));
+    }
+
     async readNexusFileWebix(){
         if(this.device === null) return "";
         return await this.fetchAttrValue("nexusFileWebixXml");
@@ -93,7 +98,7 @@ export class ConfigurationManager extends XenvServer {
 
     async readRoutesXml(){
         if(this.device === null) return "";
-        return await this.fetchAttrValue("camelRoutes");
+        return await this.fetchAttrValue("camelRoutesXml");
     }
 
     async readStatusServerXml(){
@@ -126,14 +131,5 @@ export class DataFormatServer extends XenvServer {
     async readNxFile(){
         if(this.device === null) return undefined;
         return await this.fetchAttrValue("nxFile");
-    }
-}
-
-export class Profile {
-    constructor(id, tango_host, instance_name) {
-        this.id = id;
-        this.value = id;//MVC.String.capitalize(id);
-        this.tango_host = tango_host;
-        this.instance_name = instance_name;
     }
 }

@@ -1,5 +1,5 @@
-import {newXenvHqBody, xenvHqBottom, xenvHqSettings, xenvHqToolbar, xenvProfileSettings} from "./xenv_views.js"
-import {ConfigurationManager, DataFormatServer, Profile, XenvServer} from "./xenv_models.js";
+import {newXenvHqBody, xenvHqBottom, xenvHqSettings, xenvHqToolbar} from "./xenv_views.js"
+import {ConfigurationManager, DataFormatServer, XenvServer} from "./xenv_models.js";
 
 // if(MVC.env() === "test")
 //     import("./xenv_test.js").then(module => bad_status = module.bad_status)
@@ -70,17 +70,11 @@ const xenvHq = webix.protoUI({
         }
             this.$$('main_tab').run();
         this.hideProgress();
-        
-        await this.loadProfiles();
-
-        if(state.data.profile)
-            this.$$('profiles').setValue(state.data.profile);
     },
     _ui:function(){
         return {
             rows:[
                 xenvHqToolbar,
-                xenvProfileSettings,
                 xenvHqSettings,
                 newXenvHqBody({
                     master: this,
@@ -91,136 +85,35 @@ const xenvHq = webix.protoUI({
             ]
         }
     },
-    async refreshProfiles(){
-        await this.updateConfiguration();
-        await this.loadProfiles();
-        await this.selectProfile(this.$$('profiles').getValue());
-    },
     async updateAndRestartAll(){
         if(!this.main) {
             TangoWebappHelpers.error("Can not perform action: main server has not been set!");
             return;
         }
 
-
         const collections = this.$$('main_tab').prepareCollections();
 
-        const updateProfileCollections = await this.main.device.fetchCommand("updateProfileCollections");
+        const updateProfileCollections = await this.configuration.device.fetchCommand("selectCollections");
         const stopAll = await this.main.device.fetchCommand("stopAll");
         const clearAll = await this.main.device.fetchCommand("clearAll");
         const updateAll = await this.main.device.fetchCommand("updateAll");
         const startAll = await this.main.device.fetchCommand("startAll");
 
-        TangoWebapp.UserAction.executeCommand(updateProfileCollections, collections)
-        .then(() => TangoWebapp.UserAction.executeCommand(stopAll))
-        .then(() => TangoWebapp.UserAction.executeCommand(clearAll))
-        .then(() => TangoWebapp.UserAction.executeCommand(updateAll))
-        .then(() => TangoWebapp.UserAction.executeCommand(startAll));
+        updateProfileCollections.execute(collections)
+            .then(() => stopAll.execute())
+            .then(() => clearAll.execute())
+            .then(() => updateAll.execute())
+            .then(() => startAll.execute());
     },
-    async loadProfiles(){
-        if(!this.configuration.device) {
-            TangoWebappHelpers.error("Can not load profiles: configuration server has not been set!");
-            return;
-        }
-
-        this.$$('profiles').getPopup().getList().load(
-            {
-                $proxy: true,
-                load: (view, params) => {
-                    view.clearAll();
-                    view.parse(PlatformContext.rest.request()
-                        .hosts(this.configuration.device.host.id.replace(':','/'))
-                        .devices(this.configuration.ver)
-                        .attributes("profiles")
-                        .value().get()
-                        .then(value => value.value)
-                        .catch(err => TangoWebappHelpers.error(err)))
-                }
-            }
-        );
-    },
-    async createProfile(profile, tango_host, instance_name){
-        const createProfile = await this.configuration.device.fetchCommand("createProfile");
-
-        await TangoWebapp.UserAction.executeCommand(createProfile, [profile, tango_host, instance_name]);
-
-        await this.loadProfiles();
-
-        this.$$('profiles').setValue(profile);
-    },
-    async deleteProfile(profile){
-        const deleteProfile = await this.configuration.device.fetchCommand("deleteProfile");
-
-        await TangoWebapp.UserAction.executeCommand(deleteProfile, profile);
-
-        this.$$('profiles').setValue(null);
-        this.loadProfiles();
-    },
-    /**
-     * Does nothing if profile is undefined
-     *
-     * @param {string|null} profile
-     */
-    async selectProfile(profile){
-        if(profile === null) {
-            return;
-        }
-        if(!this.main.device) {
-            TangoWebappHelpers.error("Can not select profile: main server has not been set!");
-            return;
-        }
-        this.$$('main_tab').resetDataSources();
-
-        const load = await this.main.device.fetchCommand("load");
-
-        TangoWebapp.UserAction.executeCommand(load, profile).then(async () => {
-            this.profile.load(
-                newTangoAttributeProxy(
-                    PlatformContext.rest,
-                    this.configuration.device.host.id.replace(':','/'),
-                    this.configuration.ver,
-                    "profile"));
-
-
-            // this.$$('main_tab').applyProfile(this.profile.get());
-        }).then(async () => {
-            const attrs = await this.manager.device.fetchAttrValues(["tangoHost", "instanceName"]);
-
-            this.$$('tango_host').setValue(attrs[0].value);
-            this.$$('instance_name').setValue(attrs[1].value);
-        })
-        .then(() => {
-            this.state.updateState({profile:profile});
-        });
-    },
-
-    updateConfiguration:async function(){
-        const updateCmd = await this.configuration.device.fetchCommand("update");
-
-        TangoWebapp.UserAction.executeCommand(updateCmd);
-    },
-    commitConfiguration:async function(){
-        const commitCmd = await this.configuration.device.fetchCommand("commit");
-
-        TangoWebapp.UserAction.executeCommand(commitCmd,
-            PlatformContext.UserContext.user
-        );
-    },
-    pushConfiguration:async function(){
-        const pushCmd = await this.configuration.device.fetchCommand("push");
-
-        TangoWebapp.UserAction.executeCommand(pushCmd);
-    },
-
         /**
          *
          * @param device_class
          * @return {*|undefined}
          */
-        getServerByDeviceClass(device_class){
+        getServerByDeviceClass(device_class) {
             return this.servers.find(server => server.name === device_class, true);
         },
-        _init(config){
+        _init(config) {
             this.servers = new webix.DataCollection({
                 data: [
                     new XenvServer("HeadQuarter", undefined, "UNKNOWN", "Proxy is not initialized", null),
@@ -329,40 +222,33 @@ const xenvHq = webix.protoUI({
     get data_format_server(){
         return this.servers.find(server => server.name === "DataFormatServer",true);
     },
-    $init:function(config){
-        this._init(config);
+        /**
+         * @constructor
+         * @param config
+         */
+        $init:function(config){
+            this._init(config);
 
-        webix.extend(config, this._ui());
-        this.profile = new webix.DataRecord({
-            on: {
-                onAfterLoad:()=>{
-                    this.$$('main_tab').applyProfile(this.profile.getValues());
-                }
-            }
-        });
+            webix.extend(config, this._ui());
 
-        this.$ready.push(()=> {
-            this.$$('profile').bind(this.$$('profiles'));
-        });
+            this.$ready.push(()=> {
+                this.$$('main_tab').servers.sync(this.servers);
+            });
 
-        this.$ready.push(()=> {
-            this.$$('main_tab').servers.sync(this.servers);
-        });
+            this.addDrop(this.getNode(),{
+                /**
+                 * @function
+                 */
+                $drop:function(source, target){
+                    var dnd = webix.DragControl.getContext();
+                    if(dnd.from.config.view === 'devices_tree_tree'){
+                        this.dropDevice(dnd.source[0]);
+                    }
 
-        this.addDrop(this.getNode(),{
-            /**
-             * @function
-             */
-            $drop:function(source, target){
-                var dnd = webix.DragControl.getContext();
-                if(dnd.from.config.view === 'devices_tree_tree'){
-                    this.dropDevice(dnd.source[0]);
-                }
-
-                return false;
-            }.bind(this)
-        });
-    }
+                    return false;
+                }.bind(this)
+            });
+        }
 }, TangoWebappPlatform.mixin.Stateful, TangoWebappPlatform.mixin.OpenAjaxListener,
     webix.ProgressBar, webix.DragControl, webix.IdSpace,
     webix.ui.layout);
