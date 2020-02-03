@@ -4,7 +4,7 @@
 
     <groupId>de.hzg.wpi.xenv</groupId>
     <artifactId>xenvhq-war-plugin</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <packaging>war</packaging>
 
     <developers>
@@ -43,7 +43,7 @@
         <connection>scm:git:git@github.com:hzg-wpi/xenvhq-war-plugin</connection>
         <developerConnection>scm:git:git@github.com:hzg-wpi/xenvhq-war-plugin</developerConnection>
         <url>https://github.com/hzg-wpi/xenvhq-war-plugin</url>
-        <tag>HEAD</tag>
+        <tag>xenvhq-war-plugin-0.1</tag>
     </scm>
 
     <dependencies>
