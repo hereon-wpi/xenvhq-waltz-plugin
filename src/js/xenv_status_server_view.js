@@ -1,5 +1,4 @@
-import {newXenvServerLog} from "./xenv_views.js";
-import {newXmlView} from "./xenv_views.js";
+import {newXenvServerLog, newXmlView} from "./xenv_views.js";
 
 /**
  *
