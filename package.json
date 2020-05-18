@@ -1,5 +1,5 @@
 {
-  "name": "@hzg-wpi/xenvhq-war-plugin",
+  "name": "@hzg-wpi/xenvhq-waltz-plugin",
   "version": "1.0.0",
   "description": "XEnvHQ war plugin for Waltz",
   "module": "dist/module/index.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hzg-wpi/xenvhq-war-plugin.git"
+    "url": "git+https://github.com/hzg-wpi/xenvhq-waltz-plugin.git"
   },
   "keywords": [
     "waltz",
@@ -29,9 +29,9 @@
   "author": "Ingvord",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hzg-wpi/xenvhq-war-plugin/issues"
+    "url": "https://github.com/hzg-wpi/xenvhq-waltz-plugin/issues"
   },
-  "homepage": "https://github.com/hzg-wpi/xenvhq-war-plugin",
+  "homepage": "https://github.com/hzg-wpi/xenvhq-waltz-plugin",
   "devDependencies": {
     "@babel/core": "^7.9.6",
     "@babel/preset-env": "^7.9.6",
