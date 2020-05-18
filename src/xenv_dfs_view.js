@@ -106,7 +106,7 @@ const dfs = webix.protoUI({
             }
         }
     }
-}, TangoWebappPlatform.mixin.OpenAjaxListener, webix.IdSpace, webix.ui.layout);
+},  webix.IdSpace, webix.ui.layout);
 
 export function newDfsViewBody(config) {
     return webix.extend({

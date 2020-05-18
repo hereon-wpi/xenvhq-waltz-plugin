@@ -36,7 +36,7 @@ const camel_view = webix.protoUI({
             }
         }
     }
-}, TangoWebappPlatform.mixin.OpenAjaxListener,webix.IdSpace,webix.ui.layout);
+}, webix.IdSpace,webix.ui.layout);
 
 export function newCamelIntegrationViewBody(config){
     return webix.extend({

@@ -1,14 +1,14 @@
 {
-  "name": "xenvhq-war-plugin",
+  "name": "@hzg-wpi/xenvhq-war-plugin",
   "version": "1.0.0",
   "description": "XEnvHQ war plugin for Waltz",
-  "main": "src/index.js",
+  "module": "dist/module/index.js",
   "directories": {
     "doc": "docs",
     "test": "src/test/js"
   },
   "scripts": {
-    "clean": "rm -f src/main/webapp/*.js src/main/webapp/*.css",
+    "clean": "rm -f dist",
     "test": "mocha-webpack --require test/setup.js --webpack-config webpack.test.config.js \"test/**/*.test.js\"",
     "lint": "eslint ./",
     "build": "webpack --env.production true",
@@ -66,7 +66,8 @@
     "@waltz-controls/waltz-tango-rest-plugin": "^1.0.2",
     "@waltz-controls/waltz-user-actions-plugin": "^1.0.0",
     "@waltz-controls/waltz-user-context-plugin": "^1.0.1",
-    "@waltz-controls/waltz-webix-extensions": "^1.0.8"
+    "@waltz-controls/waltz-webix-extensions": "^1.0.8",
+    "codemirror": "^5.53.2"
   },
   "runtimeDependencies": [
     "@waltz-controls/middleware",

@@ -17,11 +17,11 @@ module.exports = function (env) {
     const config = {
         mode: production ? "production" : "development",
         entry: {
-            index: "./src/index.js"
+            index: "./index.js"
         },
         output: {
-            path: path.join(__dirname, "codebase"),
-            publicPath:"/codebase/",
+            path: path.join(__dirname, "dist"),
+            publicPath:"/dist/",
             filename: "[name].js",
             chunkFilename: "[name].bundle.js"
         },

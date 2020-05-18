@@ -36,7 +36,7 @@ const status_server_view = webix.protoUI({
             }
         }
     }
-},TangoWebappPlatform.mixin.OpenAjaxListener,webix.IdSpace,webix.ui.layout);
+},webix.IdSpace,webix.ui.layout);
 
 export function newStatusServerViewBody(config){
     return webix.extend({

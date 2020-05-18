@@ -1,11 +1,12 @@
+import {codemirror_textarea} from "@waltz-controls/waltz-webix-extensions";
+import 'codemirror/mode/yaml/yaml.js';
+
 /**
  *
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
  * @since 3/27/19
  */
 import {newXenvServerLog} from "./xenv_views.js";
-import {codemirror_textarea} from "@waltz-controls/waltz-webix-extensions";
-
 
 const meta_yaml = webix.protoUI({
     name: "meta_yaml",
@@ -85,7 +86,7 @@ const predator_view = webix.protoUI({
             }
         }
     }
-}, TangoWebappPlatform.mixin.OpenAjaxListener,webix.IdSpace,webix.ui.layout);
+}, webix.IdSpace,webix.ui.layout);
 
 export function newPredatorViewBody(config){
     return webix.extend({

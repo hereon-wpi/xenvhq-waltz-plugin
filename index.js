@@ -1,5 +1,5 @@
 import {Application, WaltzWidget} from "@waltz-controls/middleware";
-import {XenvHqWidget} from "codebase/index";
+import {XenvHqWidget} from "index";
 
 const userContext = {
     user: "tango-cs",

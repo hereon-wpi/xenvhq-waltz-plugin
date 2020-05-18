@@ -19,7 +19,7 @@ const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv H
 
 const kWidgetXenvHq = 'widget:xenvhq';
 
-export default class XenvHqWidget extends WaltzWidget{
+export class XenvHqWidget extends WaltzWidget{
     constructor(){
         super(kWidgetXenvHq);
 

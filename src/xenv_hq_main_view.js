@@ -1,4 +1,4 @@
-import {newSearch, newToolbar} from "@waltz-controls/waltz-webix-extensions";
+import {newSearch, newToolbar, Runnable} from "@waltz-controls/waltz-webix-extensions";
 import {newTangoAttributeProxy} from "./index.js";
 
 const dataSourcesView = {
@@ -181,7 +181,7 @@ const main = webix.protoUI({
             }
         }
     }
-}, TangoWebappPlatform.mixin.Runnable, webix.ProgressBar, webix.IdSpace, webix.ui.layout);
+}, Runnable, webix.ProgressBar, webix.IdSpace, webix.ui.layout);
 
 export function newXenvMainBody(config){
     return webix.extend({
