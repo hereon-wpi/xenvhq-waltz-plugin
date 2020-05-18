@@ -1,8 +1,7 @@
 import {newXenvHqBody, xenvHqBottom, xenvHqSettings, xenvHqToolbar} from "./xenv_views.js"
 import {ConfigurationManager, DataFormatServer, XenvServer} from "./xenv_models.js";
+import {WaltzWidget} from "@waltz-controls/middleware";
 
-// if(MVC.env() === "test")
-//     import("./xenv_test.js").then(module => bad_status = module.bad_status)
 
 const kServers = ["HeadQuarter","ConfigurationManager","XenvManager","StatusServer2","DataFormatServer","CamelIntegration","PreExperimentDataCollector"];
 
@@ -16,14 +15,84 @@ const kServerFieldMap = {
     "PreExperimentDataCollector":"predator"
 };
 
+const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv HQ';
 
-function newXenvSVGTab(){
-    return {
-        header: "<span class='webix_icon fa-map-o'></span> Xenv HQ SVG",
-        borderless: true,
-        body: TangoWebapp.ui.newSVGboard({id: 'hq-svg', svg:"Xenv.svg"})
+const kWidgetXenvHq = 'widget:xenvhq';
+
+export default class XenvHqWidget extends WaltzWidget{
+    constructor(){
+        super(kWidgetXenvHq);
+
+        this.servers = new webix.DataCollection({
+            data: [
+                new XenvServer("HeadQuarter", undefined, "UNKNOWN", "Proxy is not initialized", null),
+                new XenvServer("XenvManager", undefined, "UNKNOWN", "Proxy is not initialized", null),
+                new ConfigurationManager(),
+                new XenvServer("StatusServer2", undefined, "UNKNOWN", "Proxy is not initialized", null),
+                new XenvServer("CamelIntegration", undefined, "UNKNOWN", "Proxy is not initialized", null),
+                new XenvServer("PreExperimentDataCollector", undefined, "UNKNOWN", "Proxy is not initialized", null),
+                new DataFormatServer()
+            ]
+        });
+    }
+
+    get main(){
+        return this.servers.find(server => server.name === "HeadQuarter",true);
+    }
+
+    get configuration(){
+        return this.servers.find(server => server.name === "ConfigurationManager",true);
+    }
+
+    get manager(){
+        return this.servers.find(server => server.name === "XenvManager",true);
+    }
+
+    get status_server(){
+        return this.servers.find(server => server.name === "StatusServer2",true);
+    }
+
+    get camel(){
+        return this.servers.find(server => server.name === "CamelIntegration",true);
+    }
+
+    get predator(){
+        return this.servers.find(server => server.name === "PreExperimentDataCollector",true);
+    }
+
+    get data_format_server(){
+        return this.servers.find(server => server.name === "DataFormatServer",true);
+    }
+
+    config(){
+
+    }
+
+    ui(){
+        return {
+            header:kWidgetHeader,
+            borderless: true,
+            body: {
+                id: this.name,
+                rows: [
+                    xenvHqToolbar,
+                    xenvHqSettings,
+                    newXenvHqBody({
+                        root: this,
+                        configurationManager: this.configuration,
+                        dataFormatServer: this.data_format_server
+                    }),
+                    xenvHqBottom
+                ]
+            }
+        }
+    }
+
+    run(){
+        this.app.getWidget('widget:main').mainView.addView(this.ui());
     }
 }
+
 
 export function newTangoAttributeProxy(rest, host, device, attr) {
     return {
@@ -71,20 +140,6 @@ const xenvHq = webix.protoUI({
             this.$$('main_tab').run();
         this.hideProgress();
     },
-    _ui:function(){
-        return {
-            rows:[
-                xenvHqToolbar,
-                xenvHqSettings,
-                newXenvHqBody({
-                    master: this,
-                    configurationManager: this.configuration,
-                    dataFormatServer: this.data_format_server
-                }),
-                xenvHqBottom
-            ]
-        }
-    },
     async updateAndRestartAll(){
         if(!this.main) {
             TangoWebappHelpers.error("Can not perform action: main server has not been set!");
@@ -112,19 +167,6 @@ const xenvHq = webix.protoUI({
          */
         getServerByDeviceClass(device_class) {
             return this.servers.find(server => server.name === device_class, true);
-        },
-        _init(config) {
-            this.servers = new webix.DataCollection({
-                data: [
-                    new XenvServer("HeadQuarter", undefined, "UNKNOWN", "Proxy is not initialized", null),
-                    new XenvServer("XenvManager", undefined, "UNKNOWN", "Proxy is not initialized", null),
-                    new ConfigurationManager(),
-                    new XenvServer("StatusServer2", undefined, "UNKNOWN", "Proxy is not initialized", null),
-                    new XenvServer("CamelIntegration", undefined, "UNKNOWN", "Proxy is not initialized", null),
-                    new XenvServer("PreExperimentDataCollector", undefined, "UNKNOWN", "Proxy is not initialized", null),
-                    new DataFormatServer()
-                ]
-            });
         },
         addStateAndStatusListeners: function (server) {
             PlatformContext.subscription.subscribe({
@@ -201,27 +243,6 @@ const xenvHq = webix.protoUI({
         state[device_class] = device.id;
         this.state.updateState(state);
     },
-    get main(){
-        return this.servers.find(server => server.name === "HeadQuarter",true);
-    },
-    get configuration(){
-        return this.servers.find(server => server.name === "ConfigurationManager",true);
-    },
-    get manager(){
-        return this.servers.find(server => server.name === "XenvManager",true);
-    },
-    get status_server(){
-        return this.servers.find(server => server.name === "StatusServer2",true);
-    },
-    get camel(){
-        return this.servers.find(server => server.name === "CamelIntegration",true);
-    },
-    get predator(){
-        return this.servers.find(server => server.name === "PreExperimentDataCollector",true);
-    },
-    get data_format_server(){
-        return this.servers.find(server => server.name === "DataFormatServer",true);
-    },
         /**
          * @constructor
          * @param config
@@ -249,19 +270,6 @@ const xenvHq = webix.protoUI({
                 }.bind(this)
             });
         }
-}, TangoWebappPlatform.mixin.Stateful, TangoWebappPlatform.mixin.OpenAjaxListener,
-    webix.ProgressBar, webix.DragControl, webix.IdSpace,
+}, webix.ProgressBar, webix.DragControl, webix.IdSpace,
     webix.ui.layout);
-
-export function newXenvHeadQuarterTab(){
-    return {
-        header: "<span class='webix_icon mdi mdi-cube-scan'></span> Xenv HQ",
-        borderless: true,
-        body:
-        {
-            id: 'hq',
-            view: "xenv-hq"
-        }
-    };
-}
 

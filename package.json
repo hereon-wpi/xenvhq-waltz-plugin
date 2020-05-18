@@ -2,7 +2,7 @@
   "name": "xenvhq-war-plugin",
   "version": "1.0.0",
   "description": "XEnvHQ war plugin for Waltz",
-  "main": "src/js/index.js",
+  "main": "src/index.js",
   "directories": {
     "doc": "docs",
     "test": "src/test/js"
@@ -12,7 +12,7 @@
     "test": "mocha-webpack --require test/setup.js --webpack-config webpack.test.config.js \"test/**/*.test.js\"",
     "lint": "eslint ./",
     "build": "webpack --env.production true",
-    "module": "webpack --env.production true --env.module true",
+    "module": "webpack --env.module true",
     "standalone": "webpack --env.production true --env.module true --env.standalone true",
     "start": "webpack-dev-server --env"
   },
@@ -24,11 +24,7 @@
     "waltz",
     "waltz-controls",
     "tango-controls",
-    "web",
-    "jive",
-    "astor",
-    "epics",
-    "tine"
+    "xenv"
   ],
   "author": "Ingvord",
   "license": "MIT",
@@ -39,7 +35,6 @@
   "devDependencies": {
     "@babel/core": "^7.9.6",
     "@babel/preset-env": "^7.9.6",
-    "@waltz-controls/middleware": "^1.2.7",
     "archiver": "^3.1.1",
     "atob": "^2.1.2",
     "babel-loader": "^8.1.0",
@@ -65,5 +60,20 @@
     "webpack-cli": "^3.0.8",
     "webpack-dev-server": "^3.1.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@waltz-controls/middleware": "^1.2.7",
+    "@waltz-controls/tango-rest-client": "^1.5.0",
+    "@waltz-controls/waltz-tango-rest-plugin": "^1.0.2",
+    "@waltz-controls/waltz-user-actions-plugin": "^1.0.0",
+    "@waltz-controls/waltz-user-context-plugin": "^1.0.1",
+    "@waltz-controls/waltz-webix-extensions": "^1.0.8"
+  },
+  "runtimeDependencies": [
+    "@waltz-controls/middleware",
+    "@waltz-controls/tango-rest-client",
+    "@waltz-controls/waltz-tango-rest-plugin",
+    "@waltz-controls/waltz-user-actions-plugin",
+    "@waltz-controls/waltz-user-context-plugin",
+    "@waltz-controls/waltz-webix-extensions"
+  ]
 }

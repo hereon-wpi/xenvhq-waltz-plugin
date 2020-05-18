@@ -4,7 +4,7 @@ import {newStatusServerViewBody} from "./xenv_status_server_view.js";
 import {newCamelIntegrationViewBody} from "./xenv_camel_view.js";
 import {newPredatorViewBody} from "./xenv_predator_view.js";
 import {newDfsViewBody} from "./xenv_dfs_view.js";
-import {codemirror_textarea} from "/waltz/resources/webix_widgets/scripting_console.js";
+import {codemirror_textarea} from "@waltz-controls/waltz-webix-extensions";
 
 const xml = webix.protoUI({
     name: "xml",

@@ -17,11 +17,11 @@ module.exports = function (env) {
     const config = {
         mode: production ? "production" : "development",
         entry: {
-            index: "./src/js/index.js"
+            index: "./src/index.js"
         },
         output: {
-            path: path.join(__dirname, "src/main/webapp"),
-            publicPath: "/",
+            path: path.join(__dirname, "codebase"),
+            publicPath:"/codebase/",
             filename: "[name].js",
             chunkFilename: "[name].bundle.js"
         },
@@ -48,7 +48,7 @@ module.exports = function (env) {
         stats: "minimal",
         resolve: {
             extensions: [".js"],
-            modules: ["./src/js", "node_modules"],
+            modules: ["./src", "node_modules"],
             alias: {
                 "jet-views": path.resolve(__dirname, "sources/views"),
                 "jet-locales": path.resolve(__dirname, "sources/locales")
@@ -95,11 +95,13 @@ module.exports = function (env) {
             config.externals = ["webix-jet"];
         }
 
+        config.externals = pack.runtimeDependencies;
+
         const out = config.output;
         const sub = standalone ? "full" : "module";
 
         out.library = pack.name.replace(/[^a-z0-9]/gi, "");
-        out.libraryTarget = "umd";
+        out.libraryTarget = "umd2";
         out.path = path.join(__dirname, "dist", sub);
         out.publicPath = "/dist/" + sub + "/";
     }

@@ -1,5 +1,4 @@
-import newSearch from "/waltz/resources/webix_widgets/search.js";
-import newToolbar from "/waltz/resources/webix_widgets/attrs_monitor_toolbar.js";
+import {newSearch, newToolbar} from "@waltz-controls/waltz-webix-extensions";
 import {newTangoAttributeProxy} from "./index.js";
 
 const dataSourcesView = {

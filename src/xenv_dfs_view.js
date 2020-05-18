@@ -1,4 +1,4 @@
-import newSearch from "/waltz/resources/webix_widgets/search.js";
+import {newSearch} from "@waltz-controls/waltz-webix-extensions";
 import {newXenvServerLog} from "./xenv_views.js";
 
 const DfsViewBodyHeader = {

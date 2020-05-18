@@ -4,7 +4,7 @@
  * @since 04.09.2019
  */
 
-import newSearch from "/waltz/resources/webix_widgets/search.js";
+import {newSearch} from "@waltz-controls/waltz-webix-extensions";
 import {newTangoAttributeProxy} from "./index.js";
 import {DataSource} from "./xenv_models.js";
 
