@@ -78,11 +78,13 @@ export class XenvHqWidget extends WaltzWidget {
 
         kServers.forEach(server => {
             this.listen(update => {
+                //TODO error
                 //TODO update item
                 debugger
             }, `${server}.State`, `${this.name}.subscription`)
 
             this.listen(update => {
+                //TODO error
                 //TODO update item
                 debugger
             }, `${server}.Status`, `${this.name}.subscription`)
