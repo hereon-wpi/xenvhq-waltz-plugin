@@ -1,10 +1,10 @@
-import {newXenvHqBody, xenvHqBottom} from "./xenv_views.js"
 import {ConfigurationManager, DataFormatServer, XenvServer} from "./xenv_models.js";
 import {WaltzWidget} from "@waltz-controls/middleware";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {newXenvHqSettings, newXenvHqToolbar} from "./xenv_views";
+import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
+import {newXenvHqBody, newXenvHqBottom, newXenvHqSettings, newXenvHqToolbar} from "./xenv_views";
+import {concat} from "rxjs";
 
 
 const kServers = ["HeadQuarter", "ConfigurationManager", "XenvManager", "StatusServer2", "DataFormatServer", "CamelIntegration", "PreExperimentDataCollector"];
@@ -15,13 +15,17 @@ const kServerFieldMap = {
     "XenvManager": "manager",
     "StatusServer2": "status_server",
     "DataFormatServer": "data_format_server",
-    "CamelIntegration":"camel",
-    "PreExperimentDataCollector":"predator"
+    "CamelIntegration": "camel",
+    "PreExperimentDataCollector": "predator"
 };
 
 const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv HQ';
 
 export const kWidgetXenvHq = 'widget:xenvhq:root';
+//from Waltz.LogController
+const kChannelLog = 'channel:log';
+const kTopicLog = 'topic:log';
+const kTopicError = 'topic:error';
 
 export class XenvHqWidget extends WaltzWidget {
     constructor(app) {
@@ -50,23 +54,66 @@ export class XenvHqWidget extends WaltzWidget {
             //     new DataFormatServer()
             // ]
             url: proxy,
-            save: proxy
+            save: proxy,
+            on: {
+                onAfterAdd() {
+                    debugger
+                }
+            }
         });
+
+        kServers.forEach(server => {
+            this.listen(update => {
+                debugger
+            }, `${server}.State`, this.name)
+
+            this.listen(update => {
+                debugger
+            }, `${server}.Status`, this.name)
+        })
     }
 
     get view() {
         return $$(this.name);
     }
 
-    async restoreState() {
-        this.view.showProgress({
-            type: "icon",
-            icon: "refresh",
-        });
+    /**
+     *
+     * @param {XenvServer} server
+     */
+    async subscribe(server) {
+        const subscriptions = await this.app.getContext(kContextTangoSubscriptions);
 
+        const tangoId = TangoId.fromDeviceId(server.id);
+
+        this.app.registerObservable(`${server.name}.State`, subscriptions.observe({
+            host: tangoId.getTangoHostId(),
+            device: tangoId.getTangoDeviceName(),
+            attribute: "State",
+            type: "change"
+        }), server.name, this.name)
+
+        this.app.registerObservable(`${server.name}.Status`, subscriptions.observe({
+            host: tangoId.getTangoHostId(),
+            device: tangoId.getTangoDeviceName(),
+            attribute: "Status",
+            type: "change"
+        }), server.name, this.name)
+    }
+
+    /**
+     *
+     * @param {XenvServer} server
+     */
+    unsubscribe(server) {
+        this.app.unregisterObservable(`${server.name}.State`)
+
+        this.app.unregisterObservable(`${server.name}.Status`)
+    }
+
+    async updateSubscriptions() {
         await this.servers.waitData;
-        // this.$$('main_tab').run();
-        this.view.hideProgress();
+        this.servers.data.each(server => this.subscribe(server))
     }
 
     /**
@@ -149,7 +196,9 @@ export class XenvHqWidget extends WaltzWidget {
                         configurationManager: this.configuration,
                         dataFormatServer: this.data_format_server
                     }),
-                    xenvHqBottom
+                    newXenvHqBottom({
+                        root: this
+                    })
                 ]
             }
         }
@@ -159,6 +208,41 @@ export class XenvHqWidget extends WaltzWidget {
         const tab = this.view || $$(this.app.getWidget('widget:main').mainView.addView(this.ui()));
         webix.extend(tab, webix.ProgressBar);
         tab.$$('settings').$$('list').sync(this.servers);
+
+        this.updateSubscriptions();
+    }
+
+    async updateAndRestartAll() {
+        if (!this.main) {
+            this.dispatch("Can not perform action: main server has not been set!", kTopicLog, kChannelLog);
+            return;
+        }
+
+        const collections = this.view.$$('main_tab').prepareCollections();
+
+        const rest = await this.getTangoRest();
+
+        const main = rest.newTangoDevice(TangoId.fromDeviceId(this.main.id));
+        const updateProfileCollections = rest.newTangoDevice(TangoId.fromDeviceId(this.configuration.id)).newCommand("selectCollections");
+        const stopAll = main.newCommand("stopAll");
+        const clearAll = main.newCommand("clearAll");
+        const updateAll = main.newCommand("updateAll");
+        const startAll = main.newCommand("startAll");
+
+        concat(
+            updateProfileCollections.execute(collections),
+            stopAll.execute(),
+            clearAll.execute(),
+            updateAll.execute(),
+            startAll.execute()
+        ).subscribe({
+            next: () => {
+                this.dispatch("Successfully updated and restarted Xenv!", kTopicLog, kChannelLog);
+            },
+            error: () => {
+                this.dispatchError("Failed to updated and restarted Xenv!", kTopicError, kChannelLog);
+            }
+        });
     }
 }
 
@@ -193,26 +277,7 @@ const xenvHq = webix.protoUI({
         }
     },
 
-    async updateAndRestartAll(){
-        if(!this.main) {
-            TangoWebappHelpers.error("Can not perform action: main server has not been set!");
-            return;
-        }
 
-        const collections = this.$$('main_tab').prepareCollections();
-
-        const updateProfileCollections = await this.configuration.device.fetchCommand("selectCollections");
-        const stopAll = await this.main.device.fetchCommand("stopAll");
-        const clearAll = await this.main.device.fetchCommand("clearAll");
-        const updateAll = await this.main.device.fetchCommand("updateAll");
-        const startAll = await this.main.device.fetchCommand("startAll");
-
-        updateProfileCollections.execute(collections)
-            .then(() => stopAll.execute())
-            .then(() => clearAll.execute())
-            .then(() => updateAll.execute())
-            .then(() => startAll.execute());
-    },
         /**
          *
          * @param device_class
@@ -220,39 +285,6 @@ const xenvHq = webix.protoUI({
          */
         getServerByDeviceClass(device_class) {
             return this.servers.find(server => server.name === device_class, true);
-        },
-        addStateAndStatusListeners: function (server) {
-            PlatformContext.subscription.subscribe({
-                    host: server.device.host.id,
-                    device: server.device.name,
-                    attribute: "status",
-                    type: "change"
-                },
-                function (event) {
-                    this.servers.updateItem(server.id, {
-                        status: event.data
-                    });
-                    OpenAjax.hub.publish(`${server.name}.update.status`, event);
-                }.bind(this),
-                function (error) {
-                    console.error(error.data);
-                }.bind(this));
-
-            PlatformContext.subscription.subscribe({
-                    host: server.device.host.id,
-                    device: server.device.name,
-                    attribute: "state",
-                    type: "change"
-                },
-                function (event) {
-                    this.servers.updateItem(server.id, {
-                        state: event.data
-                    });
-                    OpenAjax.hub.publish(`${server.name}.update.state`, event);
-                }.bind(this),
-                function (error) {
-                    console.error(error.data);
-                }.bind(this));
         },
 
         /**

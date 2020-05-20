@@ -1,7 +1,7 @@
 import {Application, WaltzWidget} from "@waltz-controls/middleware";
 import {kWidgetXenvHq, XenvHqWidget} from "index";
 import {kUserContext, UserContext} from "@waltz-controls/waltz-user-context-plugin";
-import {TangoRestController} from "@waltz-controls/waltz-tango-rest-plugin";
+import {TangoRestController, TangoSubscriptionsController} from "@waltz-controls/waltz-tango-rest-plugin";
 
 const kDummyUser = {
     name: 'tango-cs',
@@ -62,6 +62,7 @@ const waltz = new Application({name: APPNAME, version: VERSION})
     .registerContext('user', kDummyUser)
     .registerContext(kUserContext, new DummyUserContext())
     .registerController(application => new TangoRestController(application))
+    .registerController(application => new TangoSubscriptionsController(application))
     .registerWidget(application => new MainWidget(application))
     .registerWidget(application => new XenvHqWidget(application))
     .run()

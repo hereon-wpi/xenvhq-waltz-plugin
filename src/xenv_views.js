@@ -129,11 +129,13 @@ export function newXenvHqBody(config){
     };
 }
 
-export const xenvHqBottom = {
-    view: "button",
-    value: "Update & Restart all",
-    minHeight: 80,
-    click() {
-        this.getTopParentView().updateAndRestartAll()
+export function newXenvHqBottom(config) {
+    return {
+        view: "button",
+        value: "Update & Restart all",
+        minHeight: 80,
+        click() {
+            config.root.updateAndRestartAll()
+        }
     }
-};
+}

@@ -2,6 +2,15 @@ import {newSearch, newToolbar, Runnable, WaltzWidgetMixin} from "@waltz-controls
 import {from} from "rxjs";
 import {groupBy, mergeMap, reduce} from "rxjs/operators";
 
+/**
+ * From Waltz actions
+ *
+ * @type {string}
+ */
+const kActionSelectTangoDevice = 'action:select_tango_device'
+
+const findAll = () => true;
+
 function newDataSourcesView(config) {
     return {
         padding: 15,
@@ -54,7 +63,7 @@ function newDataSourcesView(config) {
         }
     ]
     }
-};
+}
 
 function newXenvServersView(config) {
     return {
@@ -101,13 +110,7 @@ function newXenvServersView(config) {
                 },
                 on: {
                     onItemClick(id) {
-                        const device = this.getItem(id).device;
-                        PlatformContext.loadAndSetDevice(device.id);
-
-                        PlatformApi.PlatformUIController().expandDeviceTree();
-                    },
-                    onItemDblClick(id) {
-                        //TODO open tab with configuration, log etc
+                        config.root.dispatch(id, kActionSelectTangoDevice);
                     }
                 }
             },
@@ -116,7 +119,7 @@ function newXenvServersView(config) {
     }
 };
 
-const findAll = () => true;
+
 /**
  *
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
