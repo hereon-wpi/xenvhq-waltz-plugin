@@ -3,6 +3,13 @@ import {kWidgetXenvHq, XenvHqWidget} from "index";
 import {kUserContext, UserContext} from "@waltz-controls/waltz-user-context-plugin";
 import {TangoRestController} from "@waltz-controls/waltz-tango-rest-plugin";
 
+const kDummyUser = {
+    name: 'tango-cs',
+    headers: {
+        "Authorization": "Basic " + btoa("tango-cs:tango")
+    }
+};
+
 class DummyUserContext extends UserContext {
     constructor() {
         super({
@@ -52,6 +59,7 @@ class MainWidget extends WaltzWidget {
 }
 
 const waltz = new Application({name: APPNAME, version: VERSION})
+    .registerContext('user', kDummyUser)
     .registerContext(kUserContext, new DummyUserContext())
     .registerController(application => new TangoRestController(application))
     .registerWidget(application => new MainWidget(application))

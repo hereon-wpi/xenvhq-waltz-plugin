@@ -1,6 +1,5 @@
 import {codemirror_textarea} from "@waltz-controls/waltz-webix-extensions";
 import 'codemirror/mode/yaml/yaml.js';
-
 /**
  *
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -81,8 +80,9 @@ const predator_view = webix.protoUI({
                 this.$$('log').add(event,0);
             },
             onViewShow(){
-                if(this.config.configurationManager.device == null) return;
-                this.update();
+                //TODO
+                // if(this.config.configurationManager.device == null) return;
+                // this.update();
             }
         }
     }

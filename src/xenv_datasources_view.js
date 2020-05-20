@@ -490,8 +490,9 @@ const datasources_view = webix.protoUI({
     defaults: {
         on: {
             onViewShow() {
-                if (this.config.configurationManager.device == null) return;
-                this.collections.load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"));
+                //TODO
+                // if (this.config.configurationManager.device == null) return;
+                // this.collections.load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"));
             }
         }
     }

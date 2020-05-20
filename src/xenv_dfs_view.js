@@ -101,8 +101,9 @@ const dfs = webix.protoUI({
                 });
             },
             onViewShow(){
-                if(this.config.configurationManager.device == null) return;
-                this.update();
+                //TODO
+                // if(this.config.configurationManager.device == null) return;
+                // this.update();
             }
         }
     }

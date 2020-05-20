@@ -1,5 +1,6 @@
-import {newSearch, newToolbar, Runnable} from "@waltz-controls/waltz-webix-extensions";
-import {newTangoAttributeProxy} from "./index.js";
+import {newSearch, newToolbar, Runnable, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
+import {from} from "rxjs";
+import {groupBy, mergeMap, reduce} from "rxjs/operators";
 
 function newDataSourcesView(config) {
     return {
@@ -115,6 +116,7 @@ function newXenvServersView(config) {
     }
 };
 
+const findAll = () => true;
 /**
  *
  * @author Igor Khokhriakov <igor.khokhriakov@hzg.de>
@@ -145,7 +147,7 @@ const main = webix.protoUI({
     prepareCollections(){
         const result = {
             lvalue:[],
-            svalue:[]
+            svalue: []
         };
 
         this.data.data.each(item => {
@@ -155,32 +157,44 @@ const main = webix.protoUI({
 
         return result;
     },
-    run:function(){
-        this.servers.data.each(async server => {
-            let state, status;
-            [state, status]  = await webix.promise.all([
-                server.fetchState(),
-                server.fetchStatus()
-            ]);
-            this.servers.updateItem(server.id , {state, status});
-        });
+    run() {
+        this.getTangoRest().then(rest => rest.toTangoRestApiRequest()
+            .attributes()
+            .value()
+            .get(`?${this.servers.find(findAll).map(server => ['wildcard=' + server.id + '/state', 'wildcard=' + server.id + '/status']).flat().join('&')}`)
+            .pipe(
+                mergeMap(resp => from(resp)),
+                groupBy(update => update.device),
+                mergeMap((group$) => group$.pipe(reduce((acc, cur) => Object.assign(acc, {
+                    id: `${cur.host}/${cur.device}`,
+                    [cur.name.toLowerCase()]: cur.value
+                }), {})))
+            ).subscribe(update => {
+                this.servers.updateItem(update.id, update);
+            })
+        )
+            .catch(e => {
+                debugger
+            })
+
     },
     $init(config) {
         webix.extend(config, this._ui(config));
 
         this.$ready.push(() => {
-            this.$$('listServers').data.sync(config.root.servers);
+            this.servers.data.sync(config.root.servers);
         });
     },
-    defaults:{
-        on:{
-            onViewShow(){
-                if(this.config.configurationManager.device == null) return;
-                this.$$('listCollections').load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"))
+    defaults: {
+        on: {
+            onViewShow() {
+                //TODO
+                // if(this.config.configurationManager.device == null) return;
+                // this.$$('listCollections').load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"))
             }
         }
     }
-}, Runnable, webix.ProgressBar, webix.IdSpace, webix.ui.layout);
+}, Runnable, WaltzWidgetMixin, webix.ProgressBar, webix.IdSpace, webix.ui.layout);
 
 export function newXenvMainBody(config){
     return webix.extend({
