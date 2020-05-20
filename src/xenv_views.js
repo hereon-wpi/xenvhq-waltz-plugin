@@ -11,7 +11,7 @@ import {newDfsViewBody} from "./xenv_dfs_view.js";
 const xml = webix.protoUI({
     name: "xml",
     update(value){
-        if(!value) return;
+        if (!value || !this.editor) return;
         this.setValue(value);
     }
 },codemirror_textarea);

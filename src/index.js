@@ -27,6 +27,13 @@ const kChannelLog = 'channel:log';
 const kTopicLog = 'topic:log';
 const kTopicError = 'topic:error';
 
+/**
+ * @event CamelIntegration.Status
+ * @description topic:CamelIntegration.Status channel:kWidgetXenvHq
+ */
+/**
+ * @emits CamelIntegration.Status
+ */
 export class XenvHqWidget extends WaltzWidget {
     constructor(app) {
         super(kWidgetXenvHq, app);
@@ -58,18 +65,27 @@ export class XenvHqWidget extends WaltzWidget {
             on: {
                 onAfterAdd() {
                     debugger
+                },
+                onDataUpdate: (id, server) => {
+                    this.dispatch({
+                        ...TangoId.fromDeviceId(server.id),
+                        name: 'status',
+                        value: server.status
+                    }, `${server.name}.Status`, this.name);
                 }
             }
         });
 
         kServers.forEach(server => {
             this.listen(update => {
+                //TODO update item
                 debugger
-            }, `${server}.State`, this.name)
+            }, `${server}.State`, `${this.name}.subscription`)
 
             this.listen(update => {
+                //TODO update item
                 debugger
-            }, `${server}.Status`, this.name)
+            }, `${server}.Status`, `${this.name}.subscription`)
         })
     }
 
@@ -91,14 +107,14 @@ export class XenvHqWidget extends WaltzWidget {
             device: tangoId.getTangoDeviceName(),
             attribute: "State",
             type: "change"
-        }), server.name, this.name)
+        }), `${server.name}.State`, `${this.name}.subscription`)
 
         this.app.registerObservable(`${server.name}.Status`, subscriptions.observe({
             host: tangoId.getTangoHostId(),
             device: tangoId.getTangoDeviceName(),
             attribute: "Status",
             type: "change"
-        }), server.name, this.name)
+        }), `${server.name}.Status`, `${this.name}.subscription`)
     }
 
     /**
@@ -111,8 +127,7 @@ export class XenvHqWidget extends WaltzWidget {
         this.app.unregisterObservable(`${server.name}.Status`)
     }
 
-    async updateSubscriptions() {
-        await this.servers.waitData;
+    updateSubscriptions() {
         this.servers.data.each(server => this.subscribe(server))
     }
 
@@ -204,7 +219,8 @@ export class XenvHqWidget extends WaltzWidget {
         }
     }
 
-    run() {
+    async run() {
+        await this.servers.waitData;
         const tab = this.view || $$(this.app.getWidget('widget:main').mainView.addView(this.ui()));
         webix.extend(tab, webix.ProgressBar);
         tab.$$('settings').$$('list').sync(this.servers);

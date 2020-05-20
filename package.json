@@ -75,6 +75,7 @@
     "@waltz-controls/waltz-tango-rest-plugin",
     "@waltz-controls/waltz-user-actions-plugin",
     "@waltz-controls/waltz-user-context-plugin",
-    "@waltz-controls/waltz-webix-extensions"
+    "@waltz-controls/waltz-webix-extensions",
+    "codemirror"
   ]
 }

@@ -1,4 +1,4 @@
-import {codemirror_textarea} from "@waltz-controls/waltz-webix-extensions";
+import {codemirror_textarea, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import 'codemirror/mode/yaml/yaml.js';
 /**
  *
@@ -6,16 +6,18 @@ import 'codemirror/mode/yaml/yaml.js';
  * @since 3/27/19
  */
 import {newXenvServerLog} from "./xenv_views.js";
+import {kWidgetXenvHq} from "./index";
+import {TangoId} from "@waltz-controls/tango-rest-client";
 
 const meta_yaml = webix.protoUI({
     name: "meta_yaml",
-    update(value){
-        if(!value) return;
+    update(value) {
+        if (!value) return;
         this.setValue(value);
     }
-},codemirror_textarea);
+}, codemirror_textarea);
 
-function newMetaYamlView(){
+function newMetaYamlView() {
     return {
         gravity: 2,
         rows: [
@@ -47,9 +49,15 @@ function newMetaYamlView(){
 
 const predator_view = webix.protoUI({
     name: "predator_view",
-    async update(){
-        const value = await this.config.configurationManager.readPreExperimentDataCollectorYaml();
-        this.$$('meta_yaml').update(value);
+    async update() {
+        const rest = await this.getTangoRest();
+
+        rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+            .newAttribute("preExperimentDataCollectorYaml")
+            .read()
+            .subscribe(resp => {
+                this.$$('meta_yaml').update(resp.value);
+            });
     },
     async save(){
         const value = this.$$('meta_yaml').getValue();
@@ -71,22 +79,23 @@ const predator_view = webix.protoUI({
             ]
         }
     },
-    $init(config){
+    $init(config) {
         webix.extend(config, this._ui());
+
+        this.$ready.push(() => {
+            config.root.listen(event => {
+                this.$$('log').add(event, 0);
+            }, "PreExperimentDataCollector.Status", kWidgetXenvHq)
+        });
     },
-    defaults:{
-        on:{
-            "PreExperimentDataCollector.update.status subscribe"(event){
-                this.$$('log').add(event,0);
-            },
-            onViewShow(){
-                //TODO
-                // if(this.config.configurationManager.device == null) return;
-                // this.update();
+    defaults: {
+        on: {
+            onViewShow() {
+                this.update();
             }
         }
     }
-}, webix.IdSpace,webix.ui.layout);
+}, WaltzWidgetMixin, webix.IdSpace, webix.ui.layout);
 
 export function newPredatorViewBody(config){
     return webix.extend({

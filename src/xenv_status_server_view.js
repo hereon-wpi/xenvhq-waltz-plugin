@@ -1,4 +1,7 @@
 import {newXenvServerLog, newXmlView} from "./xenv_views.js";
+import {kWidgetXenvHq} from "./index";
+import {WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
+import {TangoId} from "@waltz-controls/tango-rest-client";
 
 /**
  *
@@ -9,9 +12,15 @@ import {newXenvServerLog, newXmlView} from "./xenv_views.js";
 
 const status_server_view = webix.protoUI({
     name: "status_server_view",
-    async update(){
-        const value = await this.config.configurationManager.readStatusServerXml();
-        this.$$('xml').update(value);
+    async update() {
+        const rest = await this.getTangoRest();
+
+        rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+            .newAttribute("statusServerXml")
+            .read()
+            .subscribe(resp => {
+                this.$$('xml').update(resp.value);
+            });
     },
     _ui(){
         return {
@@ -22,23 +31,23 @@ const status_server_view = webix.protoUI({
             ]
         }
     },
-    $init(config){
+    $init(config) {
         webix.extend(config, this._ui());
-    },
-    defaults:{
-        on:{
-            "StatusServer2.update.status subscribe"(event){
-                this.$$('log').add(event,0);
-            },
-            onViewShow(){
 
-                //TODO
-                // if(this.config.configurationManager.device == null) return;
-                // this.update();
+        this.$ready.push(() => {
+            config.root.listen(event => {
+                this.$$('log').add(event, 0);
+            }, "StatusServer2.Status", kWidgetXenvHq)
+        });
+    },
+    defaults: {
+        on: {
+            onViewShow() {
+                this.update();
             }
         }
     }
-},webix.IdSpace,webix.ui.layout);
+}, WaltzWidgetMixin, webix.IdSpace, webix.ui.layout);
 
 export function newStatusServerViewBody(config){
     return webix.extend({
