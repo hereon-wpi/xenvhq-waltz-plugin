@@ -40,19 +40,18 @@ export class DataSource {
 }
 
 export class XenvServer {
-    constructor(name, ver, state, status, device) {
+    constructor({id, name, state, status}) {
+        this.id = id;
         this.name = name;
-        this.ver = ver;
         this.state = state;
         this.status = status;
-        this.device = device;
     }
 
     /**
      *
      * @return {Promise<string>}
      */
-    fetchState(){
+    fetchState() {
         return this.fetchAttrValue("State")
             .catch(() => "UNKNOWN")
     }

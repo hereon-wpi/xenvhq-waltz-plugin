@@ -1,17 +1,18 @@
 import {newSearch, newToolbar, Runnable} from "@waltz-controls/waltz-webix-extensions";
 import {newTangoAttributeProxy} from "./index.js";
 
-const dataSourcesView = {
-    padding: 15,
-    rows: [
-        {
-            template: "Nexus file data source collections",
-            type: "header"
-        },
-        newSearch("listDataSources", "#value#"),
-        {
-            view: "list",
-            id: "listCollections",
+function newDataSourcesView(config) {
+    return {
+        padding: 15,
+        rows: [
+            {
+                template: "Nexus file data source collections",
+                type: "header"
+            },
+            newSearch("listDataSources", "#value#"),
+            {
+                view: "list",
+                id: "listCollections",
             select:true,
             multiselect: true,
             template:
@@ -51,64 +52,67 @@ const dataSourcesView = {
             }
         }
     ]
+    }
 };
 
-const xenvServersView = {
-    padding: 15,
-    rows: [
-        {
-            template: "X-Environment Servers",
-            type: "header"
-        },
-        {
-            view: "list",
-            id: "listServers",
-            drag: "order",
-            /**
-             *
-             * @param {XenvServer} obj
-             */
-            template:
-                `<div style="margin: 2em">
+function newXenvServersView(config) {
+    return {
+        padding: 15,
+        rows: [
+            {
+                template: "X-Environment Servers",
+                type: "header"
+            },
+            {
+                view: "list",
+                id: "listServers",
+                drag: "order",
+                /**
+                 *
+                 * @param {XenvServer} obj
+                 */
+                template:
+                    `<div style="margin: 2em">
                     <span class="webix_strong">#name#, device: #ver#</span><br>
 					State:  | <span class="webix_strong" style="{common.stateHighlightColor()}">#state#</span> | <br/>
 					Status: |  <span>#status#</span> |<br>
                     </div>`
-            ,
-            type: {
-                height: "auto",
-                stateHighlightColor: obj => {
-                    switch (obj.state) {
-                        case "ON":
-                            return "background-color: #9ACD32";
-                        case "RUNNING":
-                            return "background-color: #6B8E23; color: white";
-                        case "ALARM":
-                            return "background-color: #FFFF00";
-                        case "FAULT":
-                            return "background-color: #B22222; color: white";
-                        case "STANDBY":
-                            return "background-color: #FFD700";
-                        case "UNKNOWN":
-                        default:
-                            return "background-color: #D3D3D3";
+                ,
+                type: {
+                    height: "auto",
+                    stateHighlightColor: obj => {
+                        switch (obj.state) {
+                            case "ON":
+                                return "background-color: #9ACD32";
+                            case "RUNNING":
+                                return "background-color: #6B8E23; color: white";
+                            case "ALARM":
+                                return "background-color: #FFFF00";
+                            case "FAULT":
+                                return "background-color: #B22222; color: white";
+                            case "STANDBY":
+                                return "background-color: #FFD700";
+                            case "UNKNOWN":
+                            default:
+                                return "background-color: #D3D3D3";
+                        }
+                    }
+                },
+                on: {
+                    onItemClick(id) {
+                        const device = this.getItem(id).device;
+                        PlatformContext.loadAndSetDevice(device.id);
+
+                        PlatformApi.PlatformUIController().expandDeviceTree();
+                    },
+                    onItemDblClick(id) {
+                        //TODO open tab with configuration, log etc
                     }
                 }
             },
-            on: {
-                onItemClick(id) {
-                    const device = this.getItem(id).device;
-                    PlatformContext.loadAndSetDevice(device.id);
-                    
-                    PlatformApi.PlatformUIController().expandDeviceTree();
-                },
-                onItemDblClick(id) {
-                    //TODO open tab with configuration, log etc
-                }
-            }
-        },
-        newToolbar()
-    ]
+            newToolbar()
+        ]
+    }
 };
 
 /**
@@ -118,11 +122,11 @@ const xenvServersView = {
  */
 const main = webix.protoUI({
     name: "main",
-    _ui(){
+    _ui(config) {
         return {
-            cols:[
-                dataSourcesView,
-                xenvServersView
+            cols: [
+                newDataSourcesView(config),
+                newXenvServersView(config)
             ]
         }
     },
@@ -161,16 +165,11 @@ const main = webix.protoUI({
             this.servers.updateItem(server.id , {state, status});
         });
     },
-    $init(config){
-        webix.extend(config, this._ui());
+    $init(config) {
+        webix.extend(config, this._ui(config));
 
-        OpenAjax.hub.subscribe(`ConfigurationManager.set.proxy`,(eventName,{server})=>{
-            webix.extend(this.config, {
-                host: server.device.host.id.replace(':','/'),
-                device: server.ver
-            });
-
-            this.$$('listCollections').load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"))
+        this.$ready.push(() => {
+            this.$$('listServers').data.sync(config.root.servers);
         });
     },
     defaults:{

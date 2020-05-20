@@ -299,10 +299,9 @@ function newToolbar(parent){
 function newSortButton(by) {
     return {
         view: "button",
-        //TODO requires webix 6.x
-        // css: "webix_transparent",
+        css: "webix_transparent",
         type: "icon",
-        label: `<span class='webix_strong'>${MVC.String.classize(by)}</span>`,
+        label: `<span class='webix_strong'>${by}</span>`,
         dir: "asc",
         click() {
             this.getTopParentView().$$('listDataSources').sort(by, this.config.dir);
@@ -445,17 +444,17 @@ const datasources_view = webix.protoUI({
                 $$list.select(id);
             });
     },
-    $init(config){
-        webix.extend(config,this._ui());
+    $init(config) {
+        webix.extend(config, this._ui());
 
-        OpenAjax.hub.subscribe(`ConfigurationManager.set.proxy`,(eventName,{server})=>{
-            webix.extend(this.config, {
-                host: server.device.host.id.replace(':','/'),
-                device: server.ver
-            });
-
-            this.collections.load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"));
-        });
+        // OpenAjax.hub.subscribe(`ConfigurationManager.set.proxy`,(eventName,{server})=>{
+        //     webix.extend(this.config, {
+        //         host: server.device.host.id.replace(':','/'),
+        //         device: server.ver
+        //     });
+        //
+        //     this.collections.load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"));
+        // });
 
         this.$ready.push(() => {
             const list = this.$$("selectDataSources").getPopup().getList();

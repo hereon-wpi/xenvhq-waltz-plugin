@@ -46,108 +46,56 @@ export function newXenvServerLog() {
     }
 }
 
-export const xenvHqToolbar = {
-    view: "toolbar",
-    maxHeight: 30,
-    cols: [
-        {},
-        {
-            view: "icon",
-            icon: "mdi mdi-settings",
-            maxWidth: 30,
-            click: function () {
-                const $$HQsettings = this.getTopParentView().$$("hq-settings");
-                if ($$HQsettings.isVisible())
-                    $$HQsettings.hide();
-                else
-                    $$HQsettings.show();
-            }
-        }
-    ]
-};
-
-export const xenvHqSettings = {
-    id: 'hq-settings',
-    hidden: true,
-    rows: [
-        {
-            id: "main",
-            view: "text",
-            value: "",
-            label: "HQ main",
-            labelWidth: 120,
-            tooltip: "HQ main",
-            labelAlign: "right"
-        },
-        {
-            id: "configuration",
-            view: "text",
-            value: "",
-            label: "HQ configuration manager",
-            labelWidth: 120,
-            tooltip: "HQ configuration manager",
-            labelAlign: "right"
-        },
-        {
-            id: "manager",
-            view: "text",
-            value: "",
-            label: "HQ xenv servers manager",
-            labelWidth: 120,
-            tooltip: "HQ xenv servers manager",
-            labelAlign: "right"
-        },
-        {
-            id: "camel",
-            view: "text",
-            value: "",
-            label: "CamelIntegration",
-            labelWidth: 120,
-            tooltip: "CamelIntegration",
-            labelAlign: "right"
-        },
-        {
-            id: "status_server",
-            view: "text",
-            value: "",
-            label: "StatusServer",
-            labelWidth: 120,
-            tooltip: "StatusServer",
-            labelAlign: "right"
-        },
-        {
-            id: "data_format_server",
-            view: "text",
-            value: "",
-            label: "DataFormatServer",
-            labelWidth: 120,
-            tooltip: "DataFormatServer",
-            labelAlign: "right"
-        },
-        {
-            id: "predator",
-            view: "text",
-            value: "",
-            label: "PreExperimentDataCollector",
-            labelWidth: 120,
-            tooltip: "PreExperimentDataCollector",
-            labelAlign: "right"
-        },
-        {
-            cols: [
-                {},
-                {
-                    view: "button",
-                    value: "Apply",
-                    maxWidth:120,
-                    click(){
-                        this.getTopParentView().applySettings();
-                    }
+export function newXenvHqToolbar() {
+    return {
+        view: "toolbar",
+        maxHeight: 30,
+        cols: [
+            {},
+            {
+                view: "icon",
+                icon: "mdi mdi-settings",
+                maxWidth: 30,
+                click: function () {
+                    const $$HQsettings = this.getTopParentView().$$("settings");
+                    if ($$HQsettings.isVisible())
+                        $$HQsettings.hide();
+                    else
+                        $$HQsettings.show();
                 }
-            ]
-        }
-    ]
-};
+            }
+        ]
+    }
+}
+
+export function newXenvHqSettings() {
+    return {
+        id: 'settings',
+        hidden: true,
+        isolate: true,
+        rows: [
+            {
+                view: 'list',
+                id: 'list',
+                template: '<b>#name#</b>:#id#',
+                autoheight: true
+            },
+            {
+                cols: [
+                    {},
+                    {
+                        view: "button",
+                        value: "Apply",
+                        maxWidth: 120,
+                        click() {
+                            this.getTopParentView().applySettings();
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
 
 export function newXenvHqBody(config){
     return {
