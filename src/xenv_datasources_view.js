@@ -4,9 +4,10 @@
  * @since 04.09.2019
  */
 
-import {newSearch} from "@waltz-controls/waltz-webix-extensions";
-import {newTangoAttributeProxy} from "./index.js";
+import {newSearch, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import {DataSource} from "./xenv_models.js";
+import {TangoId} from "@waltz-controls/tango-rest-client";
+import {concatMap} from "rxjs/operators";
 
 /**
  *
@@ -15,8 +16,8 @@ import {DataSource} from "./xenv_models.js";
  * @param {string} value
  * @function
  */
-const filterDataSourcesList = (dataSource, value)=>{
-    if(!value) return true;
+const filterDataSourcesList = (dataSource, value) => {
+    if (!value) return true;
     return dataSource.src.includes(value) || dataSource.nxPath.includes(value);
 };
 
@@ -329,11 +330,9 @@ function newSort() {
 
 const datasources_view = webix.protoUI({
     name: "datasources_view",
-    collections: new webix.DataCollection(),
-    datasources: new webix.DataCollection(),
     _ui(){
         return {
-            rows:[
+            rows: [
                 newToolbar(this),
                 newDataSourceCollectionForm(this),
                 newSort(),//TODO replace with smart filter
@@ -343,67 +342,61 @@ const datasources_view = webix.protoUI({
             ]
         }
     },
-    selectCollection(collection){
-        //TODO extract to proxy
-        return PlatformContext.rest.request()
-            .hosts(this.config.host)
-            .devices(this.config.device)
-            .attributes("datasourcescollection")
-            .value().put("?v=" + collection)
-            .then(() => {
-                this.datasources.load(
-                    newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasources")
-                );
-            })
-            .catch(err => TangoWebappHelpers.error(err));
-
+    async selectCollection(collection) {
+        const rest = await this.getTangoRest();
+        rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+            .newAttribute("datasourcescollection")
+            .write(collection).pipe(
+            concatMap(() => rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+                .newAttribute("datasources")
+                .read())
+        ).subscribe(resp => {
+            this.datasources.clearAll();
+            this.datasources.parse(resp.value);
+        });
     },
-    setCollection(){
+    /**
+     *
+     * @return {Promise<*>}
+     */
+    setCollection() {
         const collection = this.$$('selectDataSources').getValue();
-        return PlatformContext.rest.request()
-            .hosts(this.config.host)
-            .devices(this.config.device)
-            .attributes("datasourcescollection")
-            .value().put("?v=" + collection)
+        return this.getTangoRest()
+            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+                .newAttribute("datasourcescollection")
+                .write(collection).toPromise());
     },
-    deleteCollection(collection){
-        return new webix.promise(function(success, fail){
+    deleteCollection(collection) {
+        return new Promise(function (success, fail) {
             webix.modalbox({
-                buttons:["No", "Yes"],
-                width:500,
-                text:`<span class='webix_icon fa-exclamation-circle'></span><p>This will delete data sources collection ${collection} and all associated data sources! Proceed?</p>`,
-                callback:function(result){
+                buttons: ["No", "Yes"],
+                width: 500,
+                text: `<span class='webix_icon fa-exclamation-circle'></span><p>This will delete data sources collection ${collection} and all associated data sources! Proceed?</p>`,
+                callback: function (result) {
                     if (result === "1") success();
                 }
             });
-        }).then(() => {
-            return PlatformContext.rest.request()
-            .hosts(this.config.host)
-            .devices(this.config.device)
-            .commands('deleteCollection')
-            .put("", collection);}
-        );
+        }).then(() => this.getTangoRest())
+            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+                .newCommand('deleteCollection')
+                .execute()
+                .toPromise()
+            );
     },
-    cloneCollection(collection, source){
-        return PlatformContext.rest.request()
-            .hosts(this.config.host)
-            .devices(this.config.device)
-            .commands('cloneCollection')
-            .put("", [collection,source]);
+    cloneCollection(collection, source) {
+        return this.getTangoRest()
+            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+                .newCommand('cloneCollection')
+                .execute([collection, source])
+                .toPromise())
     },
     processDataSource(operation, dataSource){
         return this.setCollection()
-            .then(() => {
-                return PlatformContext.rest.request()
-                    .hosts(this.config.host)
-                    .devices(this.config.device)
-                    .commands(`${operation}datasource`)//insert|update|delete
-                    .put("", dataSource);
-            })
-            .fail(err => {
-                TangoWebappHelpers.error(err);
-                throw err;
-            });
+            .then(() => this.getTangoRest())
+            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
+                .newCommand(`${operation}datasource`)//insert|update|delete
+                .execute(JSON.stringify(dataSource))
+                .toPromise())
     },
     addDataSource(dataSource){
         return this.processDataSource("insert",dataSource)
@@ -425,7 +418,7 @@ const datasources_view = webix.protoUI({
     },
     /**
      *
-     * @param {string} id
+     * @param {TangoId} id
      */
     dropAttr(id){
         const attr = TangoAttribute.find_one(id);
@@ -447,14 +440,26 @@ const datasources_view = webix.protoUI({
     $init(config) {
         webix.extend(config, this._ui());
 
-        // OpenAjax.hub.subscribe(`ConfigurationManager.set.proxy`,(eventName,{server})=>{
-        //     webix.extend(this.config, {
-        //         host: server.device.host.id.replace(':','/'),
-        //         device: server.ver
-        //     });
-        //
-        //     this.collections.load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"));
-        // });
+        const collectionsProxy = {
+            $proxy: true,
+            load: async () => {
+                const rest = await config.root.getTangoRest();
+                return rest.newTangoDevice(TangoId.fromDeviceId(config.configurationManager.id))
+                    .newAttribute("datasourcecollections")
+                    .read()
+                    .toPromise()
+                    .then(resp => resp.value)
+            },
+            save: () => {
+                debugger
+            }
+        }
+
+        this.collections = new webix.DataCollection({
+            url: collectionsProxy,
+            save: collectionsProxy
+        });
+        this.datasources = new webix.DataCollection();
 
         this.$ready.push(() => {
             const list = this.$$("selectDataSources").getPopup().getList();
@@ -496,7 +501,7 @@ const datasources_view = webix.protoUI({
             }
         }
     }
-}, webix.DragControl, webix.IdSpace, webix.ui.layout);
+}, WaltzWidgetMixin, webix.DragControl, webix.IdSpace, webix.ui.layout);
 
 export function newDataSourcesBody(config){
     return webix.extend({
