@@ -68,18 +68,80 @@ export function newXenvHqToolbar() {
     }
 }
 
-export function newXenvHqSettings() {
+export function newXenvHqSettings(config) {
     return {
         id: 'settings',
         hidden: true,
         isolate: true,
+        drag: "target",
         rows: [
             {
-                view: 'list',
-                id: 'list',
-                template: '<b>#name#</b>:#id#',
-                autoheight: true
+                id: "main",
+                view: "text",
+                value: "",
+                required: true,
+                label: "HQ main",
+                labelWidth: 240,
+                tooltip: "HQ main",
+                labelAlign: "right"
             },
+            {
+                id: "configuration",
+                view: "text",
+                value: "",
+                required: true,
+                label: "HQ configuration manager",
+                labelWidth: 240,
+                tooltip: "HQ configuration manager",
+                labelAlign: "right"
+            },
+            {
+                id: "manager",
+                view: "text",
+                value: "",
+                required: true,
+                label: "HQ xenv servers manager",
+                labelWidth: 240,
+                tooltip: "HQ xenv servers manager",
+                labelAlign: "right"
+            },
+            {
+                id: "camel",
+                view: "text",
+                value: "",
+                label: "CamelIntegration",
+                labelWidth: 240,
+                tooltip: "CamelIntegration",
+                labelAlign: "right"
+            },
+            {
+                id: "status_server",
+                view: "text",
+                value: "",
+                label: "StatusServer",
+                labelWidth: 240,
+                tooltip: "StatusServer",
+                labelAlign: "right"
+            },
+            {
+                id: "data_format_server",
+                view: "text",
+                value: "",
+                label: "DataFormatServer",
+                labelWidth: 240,
+                tooltip: "DataFormatServer",
+                labelAlign: "right"
+            },
+            {
+                id: "predator",
+                view: "text",
+                value: "",
+                label: "PreExperimentDataCollector",
+                labelWidth: 240,
+                tooltip: "PreExperimentDataCollector",
+                labelAlign: "right"
+            },
+            {},
             {
                 cols: [
                     {},
@@ -88,7 +150,7 @@ export function newXenvHqSettings() {
                         value: "Apply",
                         maxWidth: 120,
                         click() {
-                            this.getTopParentView().applySettings();
+                            config.root.run();
                         }
                     }
                 ]

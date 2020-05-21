@@ -3,10 +3,10 @@ import {WaltzWidget} from "@waltz-controls/middleware";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {newXenvHqBody, newXenvHqBottom, newXenvHqSettings, newXenvHqToolbar} from "./xenv_views";
+import {newXenvHqBody, newXenvHqBottom, newXenvHqSettings} from "./xenv_views";
 import {concat} from "rxjs";
 
-
+const kRequiredServers = ["HeadQuarter", "ConfigurationManager", "XenvManager"];
 const kServers = ["HeadQuarter", "ConfigurationManager", "XenvManager", "StatusServer2", "DataFormatServer", "CamelIntegration", "PreExperimentDataCollector"];
 
 const kServerFieldMap = {
@@ -20,12 +20,61 @@ const kServerFieldMap = {
 };
 
 const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv HQ';
+const kWidgetRequiersServers = '<span class="webix_icon mdi mdi-chat-alert"></span> XenvHQ widget requires at least 3 servers to be defined: ' + kRequiredServers.map(serverName => `<div>${serverName}</div>`).join('');
 
 export const kWidgetXenvHq = 'widget:xenvhq:root';
 //from Waltz.LogController
 const kChannelLog = 'channel:log';
 const kTopicLog = 'topic:log';
 const kTopicError = 'topic:error';
+
+const kFirstFound = true;
+
+function devicesTreeIdToTangoId(tree, id) {
+    const item = tree.getItem(id);
+    const host = tree.getTangoHostId(item);
+
+    return TangoId.fromDeviceId(`${host}/${item.device_name}`)
+}
+
+/**
+ * As TangoDb may return device.classname === 'unknown' we have to use this work-around
+ *
+ * @example
+ * development/xenv/hq -> HeadQuarter
+ * development/xenv/config -> ConfigurationManager
+ * development/xenv/manager -> XenvManager
+ *
+ * @param device
+ * @return {string}
+ */
+function guessDeviceClass(device) {
+    const name = device.split('/')[2];
+    switch (name) {
+        case "hq":
+            return "HeadQuarter";
+        case "config":
+            return "ConfigurationManager";
+        case "manager":
+            return "XenvManager";
+        default:
+            throw new Error(`Can not guess device class for device ${device}. TangoDb returns classname === 'unknown'`);
+
+    }
+
+}
+
+function getDeviceClass(info) {
+    return info.classname !== 'unknown' ? info.classname : guessDeviceClass(info.name);
+}
+
+
+class ContextEntity {
+    constructor({id, name}) {
+        this.id = id;
+        this.name = name;
+    }
+}
 
 /**
  * @event CamelIntegration.Status
@@ -41,11 +90,29 @@ export class XenvHqWidget extends WaltzWidget {
         const proxy = {
             $proxy: true,
             load: () => {
-                return this.app.getContext(kUserContext).then(userContext =>
-                    userContext.getOrDefault(this.name, []).map(contextItem => new XenvServer(contextItem)))
+                return this.getUserContext().then(userContext =>
+                    userContext.getOrDefault(this.name, []).map(contextEntity => new XenvServer(contextEntity)))
             },
             save: (view, params, dp) => {
-                return Promise.resolve(42);
+                switch (params.operation) {
+                    case "insert":
+                    case "update":
+                        return this.getUserContext()
+                            .then(userContext =>
+                                userContext.updateExt(this.name, ext => {
+                                    const newContextEntity = new ContextEntity(params.data);
+                                    const index = ext.findIndex(contextEntity => contextEntity.name === params.data.name);
+                                    if (index > -1) {
+                                        ext[index] = newContextEntity;
+                                    } else {
+                                        ext.push(newContextEntity);
+                                    }
+                                }))
+                            .then(userContext => userContext.save())
+                            .then(() => this.dispatch(`UserContext for ${this.name} has been successfully updated!`, kTopicLog, kChannelLog));
+                    default:
+                        return Promise.resolve();
+                }
             }
         }
 
@@ -63,9 +130,6 @@ export class XenvHqWidget extends WaltzWidget {
             url: proxy,
             save: proxy,
             on: {
-                onAfterAdd() {
-                    debugger
-                },
                 onDataUpdate: (id, server) => {
                     this.dispatch({
                         ...TangoId.fromDeviceId(server.id),
@@ -133,41 +197,16 @@ export class XenvHqWidget extends WaltzWidget {
         this.servers.data.each(server => this.subscribe(server))
     }
 
-    /**
-     *
-     * @param {TangoId} id
-     */
-    async dropDevice(id) {
-        const rest = await this.getTangoRest();
-        const device = await rest.newTangoDevice(id).toTangoRestApiRequest().get().toPromise();
-        debugger
-        const device_class = device.info.device_class;
-
-        const server = this.getServerByDeviceClass(device_class);
-
-        if (server === undefined) return;
-
-        this.servers.updateItem(server.id, {
-            status: `Proxy has been set to ${device.id}`,
-            ver: device.name,
-            device
-        });
-
-        OpenAjax.hub.publish(`${server.name}.set.proxy`, {server});
-
-        this.addStateAndStatusListeners(server);
-
-        //update settings
-        this.$$([kServerFieldMap[device_class]]).setValue(device.id);
-
-        //update state
-        const state = Object.create(null);
-        state[device_class] = device.id;
-        this.state.updateState(state);
+    get $$settings() {
+        return this.view.$$('settings');
     }
 
     getTangoRest() {
         return this.app.getContext(kTangoRestContext);
+    }
+
+    get $$body() {
+        return this.view.$$('body');
     }
 
     get main() {
@@ -179,41 +218,67 @@ export class XenvHqWidget extends WaltzWidget {
     }
 
     get manager() {
-        return this.servers.find(server => server.name === "XenvManager",true);
+        return this.servers.find(server => server.name === "XenvManager", true);
     }
 
-    get status_server(){
-        return this.servers.find(server => server.name === "StatusServer2",true);
+    get status_server() {
+        return this.servers.find(server => server.name === "StatusServer2", true);
     }
 
-    get camel(){
-        return this.servers.find(server => server.name === "CamelIntegration",true);
+    get camel() {
+        return this.servers.find(server => server.name === "CamelIntegration", true);
     }
 
-    get predator(){
-        return this.servers.find(server => server.name === "PreExperimentDataCollector",true);
+    get predator() {
+        return this.servers.find(server => server.name === "PreExperimentDataCollector", true);
     }
 
-    get data_format_server(){
-        return this.servers.find(server => server.name === "DataFormatServer",true);
+    get data_format_server() {
+        return this.servers.find(server => server.name === "DataFormatServer", true);
     }
 
-    ui(){
+    /**
+     *
+     * @param {TangoId} id
+     */
+    async dropDevice(id) {
+        const rest = await this.getTangoRest();
+        const device = await rest.newTangoDevice(id).toTangoRestApiRequest().get().toPromise();
+        const device_class = getDeviceClass(device.info);
+
+        const server = this.servers.find(server => server.name === device_class, kFirstFound);
+
+        if (server) {
+            this.servers.data.changeId(server.id, device.id)
+            this.servers.updateItem(device.id, {
+                status: `Proxy has been set to ${device.id}`,
+            });
+        } else {
+            this.servers.add(new XenvServer({
+                id: device.id,
+                name: device_class,
+                status: `Proxy has been set to ${device.id}`,
+                state: 'UNKNOWN'
+            }))
+        }
+        //update settings
+        this.$$settings.$$([kServerFieldMap[device_class]]).setValue(device.id);
+    }
+
+    getUserContext() {
+        return this.app.getContext(kUserContext);
+    }
+
+    ui() {
         return {
-            header:kWidgetHeader,
+            header: kWidgetHeader,
             borderless: true,
             body: {
                 id: this.name,
                 isolate: true,
-                rows: [
-                    newXenvHqToolbar(),
-                    newXenvHqSettings(),
-                    newXenvHqBody({
-                        root: this,
-                        configurationManager: this.configuration,
-                        dataFormatServer: this.data_format_server
-                    }),
-                    newXenvHqBottom({
+                view: 'multiview',
+                cells: [
+                    newXenvHqSettings({
                         root: this
                     })
                 ]
@@ -221,13 +286,49 @@ export class XenvHqWidget extends WaltzWidget {
         }
     }
 
+    body() {
+        return {
+            id: 'body',
+            rows: [
+                newXenvHqBody({
+                    root: this,
+                    configurationManager: this.configuration,
+                    dataFormatServer: this.data_format_server
+                }),
+                newXenvHqBottom({
+                    root: this
+                })
+            ]
+        }
+    }
+
     async run() {
-        await this.servers.waitData;
         const tab = this.view || $$(this.app.getWidget('widget:main').mainView.addView(this.ui()));
         webix.extend(tab, webix.ProgressBar);
-        tab.$$('settings').$$('list').sync(this.servers);
+        webix.DragControl.addDrop(this.$$settings.getNode(), {
+            $drop: () => {
+                const context = webix.DragControl.getContext();
+                if (context.from.config.view === 'devices_tree' &&
+                    (context.from.getItem(context.source[0]).isAlias || context.from.getItem(context.source[0]).isMember)) {
+                    this.dropDevice(devicesTreeIdToTangoId(context.from, context.source[0]));
+                }
+            }
+        })
+        tab.showProgress();
 
-        this.updateSubscriptions();
+        await this.servers.waitData;
+
+        tab.hideProgress();
+        const requiredServers = this.servers.find(server => kRequiredServers.includes(server.name))
+        if (requiredServers.length === kRequiredServers.length) {
+            //OK
+            //TODO left panel
+            const $$body = this.$$body || $$(this.view.addView(this.body()));
+            $$body.show();
+            this.updateSubscriptions();
+        } else {
+            this.dispatch(kWidgetRequiersServers, kTopicLog, kChannelLog);
+        }
     }
 
     async updateAndRestartAll() {
@@ -283,53 +384,4 @@ export function newTangoAttributeProxy(rest, host, device, attr) {
         }
     };
 }
-
-const xenvHq = webix.protoUI({
-    name: "xenv-hq",
-    profile: null,
-    async applySettings(){
-        for(const server of kServers){
-            if(this.$$(kServerFieldMap[server]).getValue()) {
-                await this.dropDevice(this.$$(kServerFieldMap[server]).getValue());
-            }
-        }
-    },
-
-
-        /**
-         *
-         * @param device_class
-         * @return {*|undefined}
-         */
-        getServerByDeviceClass(device_class) {
-            return this.servers.find(server => server.name === device_class, true);
-        },
-
-        /**
-         * @constructor
-         * @param config
-         */
-        $init:function(config){
-            webix.extend(config, this._ui(config));
-
-            this.$ready.push(()=> {
-                this.$$('main_tab').servers.sync(this.servers);
-            });
-
-            this.addDrop(this.getNode(),{
-                /**
-                 * @function
-                 */
-                $drop:function(source, target){
-                    const dnd = webix.DragControl.getContext();
-                    if(dnd.from.config.view === 'devices_tree_tree'){
-                        this.dropDevice(dnd.source[0]);
-                    }
-
-                    return false;
-                }.bind(this)
-            });
-        }
-}, webix.ProgressBar, webix.DragControl, webix.IdSpace,
-    webix.ui.layout);
 
