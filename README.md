@@ -1,2 +1,2 @@
-# xenvhq-war-plugin
-War plugin for XenvHQ Waltz widget
+# xenvhq-waltz-plugin
+Plugin for XenvHQ Waltz widget
