@@ -1,6 +1,7 @@
 import {newSearch, newToolbar, Runnable, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import {from} from "rxjs";
 import {groupBy, mergeMap, reduce} from "rxjs/operators";
+import {TangoId} from "@waltz-controls/tango-rest-client";
 
 /**
  * From Waltz actions
@@ -110,14 +111,14 @@ function newXenvServersView(config) {
                 },
                 on: {
                     onItemClick(id) {
-                        config.root.dispatch(id, kActionSelectTangoDevice);
+                        config.root.dispatch(TangoId.fromDeviceId(id), kActionSelectTangoDevice);
                     }
                 }
             },
             newToolbar()
         ]
     }
-};
+}
 
 
 /**

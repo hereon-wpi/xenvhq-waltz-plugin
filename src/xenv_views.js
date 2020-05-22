@@ -3,10 +3,7 @@ import 'codemirror/mode/xml/xml.js';
 
 import {newXenvMainBody} from "./xenv_hq_main_view.js";
 import {newDataSourcesBody} from "./xenv_datasources_view.js";
-import {newStatusServerViewBody} from "./xenv_status_server_view.js";
-import {newCamelIntegrationViewBody} from "./xenv_camel_view.js";
-import {newPredatorViewBody} from "./xenv_predator_view.js";
-import {newDfsViewBody} from "./xenv_dfs_view.js";
+import {kXenvHqPanelId, kXenvLeftPanel} from "./index";
 
 const xml = webix.protoUI({
     name: "xml",
@@ -198,6 +195,136 @@ export function newXenvHqBottom(config) {
         minHeight: 80,
         click() {
             config.root.updateAndRestartAll()
+        }
+    }
+}
+
+const kXenvHqPanelHeader = '<span class="webix_icon mdi mdi-cube-scan"></span>XenvHQ DataSources Collections';
+
+function newDataSourceCollectionForm(config) {
+    return {
+        view: "form",
+        id: "frmCollectionSettings",
+        hidden: true,
+        elements: [
+            {
+                view: "text",
+                name: "id",
+                label: "DataSources collection",
+                labelAlign: "right",
+                labelWidth: 200,
+                validate: webix.rules.isNotEmpty
+            },
+            {
+                view: "text",
+                id: "txtCollectionProto",
+                name: "value",
+                label: "Copy from",
+                labelAlign: "right"
+            },
+            {
+                cols: [
+                    {},
+                    {
+                        view: "icon",
+                        id: 'btnAddProfile',
+                        icon: "mdi mdi-content-save",
+                        maxWidth: 30,
+                        click() {
+                            const $$frm = this.getFormView();
+                            if (!$$frm.validate()) return;
+
+                            const values = $$frm.getValues();
+
+                            config.root.addCollection(values);
+
+
+                        }
+                    }
+                ]
+            }
+        ]
+    };
+}
+
+export function newXenvHqLeftPanel(config) {
+    return {
+        view: 'accordionitem',
+        id: kXenvLeftPanel,
+        header: kXenvHqPanelHeader,
+        headerAlt: kXenvHqPanelHeader,
+        headerHeight: 32,
+        headerAltHeight: 32,
+        collapsed: true,
+        body: {
+            id: kXenvHqPanelId,
+            isolate: true,
+            rows: [
+                {
+                    id: 'list',
+                    view: "list",
+                    select: true,
+                    template: "#id#",
+                    on: {
+                        onAfterSelect(id) {
+                            config.root.selectCollection(id).then(() => config.root.collections.setCursor(id));
+                        },
+                        onAfterLoad() {
+                            if (this.count() > 0)
+                                this.select(this.getFirstId());
+                        }
+                    }
+                },
+                newDataSourceCollectionForm(config),
+                {
+                    borderless: true,
+                    view: "toolbar",
+                    cols: [
+                        {
+                            view: "icon",
+                            icon: "wxi-trash",
+                            maxWidth: 30,
+                            tooltip: "Delete selected profile",
+                            click() {
+                                // parent.deleteCollection(values.id).then(() => {
+                                //     parent.collections.remove(values.id);
+                                //     parent.datasources.clearAll();
+                                //     parent.$$('selectDataSources').setValue("");
+                                // });
+                                config.root.deleteCollection(config.root.$$panel.$$('list').getSelectedId());
+                            }
+                        },
+                        {},
+                        {
+                            view: "icon",
+                            icon: "mdi mdi-settings",
+                            tooltip: "Toggle settings",
+                            maxWidth: 30,
+                            click() {
+                                const $$settings = config.root.$$settings;
+                                if ($$settings.isVisible())
+                                    config.root.$$body.show();
+                                else
+                                    $$settings.show();
+                            }
+                        },
+                        {
+                            view: "icon",
+                            icon: "wxi-plus",
+                            tooltip: "Show new profile form",
+                            maxWidth: 30,
+                            click() {
+                                const $$frmCollection = this.getTopParentView().$$('frmCollectionSettings');
+                                if ($$frmCollection.isVisible())
+                                    $$frmCollection.hide();
+                                else
+                                    $$frmCollection.show();
+                            }
+                        }
+                    ]
+                }
+            ]
+
         }
     }
 }

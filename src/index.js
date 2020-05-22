@@ -3,7 +3,7 @@ import {WaltzWidget} from "@waltz-controls/middleware";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {newXenvHqBody, newXenvHqBottom, newXenvHqSettings} from "./xenv_views";
+import {newXenvHqBody, newXenvHqBottom, newXenvHqLeftPanel, newXenvHqSettings} from "./xenv_views";
 import {concat} from "rxjs";
 
 const kRequiredServers = ["HeadQuarter", "ConfigurationManager", "XenvManager"];
@@ -23,6 +23,9 @@ const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv H
 const kWidgetRequiersServers = '<span class="webix_icon mdi mdi-chat-alert"></span> XenvHQ widget requires at least 3 servers to be defined: ' + kRequiredServers.map(serverName => `<div>${serverName}</div>`).join('');
 
 export const kWidgetXenvHq = 'widget:xenvhq:root';
+export const kXenvLeftPanel = kWidgetXenvHq + ':accordionitem';
+export const kXenvHqPanelId = kXenvLeftPanel + ':body';
+const kMainWindow = 'widget:main';
 //from Waltz.LogController
 const kChannelLog = 'channel:log';
 const kTopicLog = 'topic:log';
@@ -75,6 +78,8 @@ class ContextEntity {
         this.name = name;
     }
 }
+
+let $$body;
 
 /**
  * @event CamelIntegration.Status
@@ -130,6 +135,11 @@ export class XenvHqWidget extends WaltzWidget {
             url: proxy,
             save: proxy,
             on: {
+                onAfterLoad: () => {
+                    this.servers.data.each(server => {
+                        this.$$settings.$$([kServerFieldMap[server.name]]).setValue(server.id);
+                    })
+                },
                 onDataUpdate: (id, server) => {
                     this.dispatch({
                         ...TangoId.fromDeviceId(server.id),
@@ -138,6 +148,31 @@ export class XenvHqWidget extends WaltzWidget {
                     }, `${server.name}.Status`, this.name);
                 }
             }
+        });
+
+
+        const collectionsProxy = {
+            $proxy: true,
+            save: (view, params, dp) => {
+                switch (params.operation) {
+                    case "insert":
+                        return ((params.data.value) ?
+                            this.cloneCollection(params.id, params.data.value) :
+                            this.selectCollection(params.id).then(resp => this.collections.updateItem(params.id, resp)))
+                            .then(() => this.collections.updateItem(params.id, {value: params.id}));
+                    case "delete":
+                        return this.getTangoRest()
+                            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
+                                .newCommand('deleteCollection')
+                                .execute(params.id)
+                                .toPromise())
+
+                }
+            },
+            // updateFromResponse: true//TODO does this work?
+        }
+        this.collections = new webix.DataCollection({
+            save: collectionsProxy
         });
 
         kServers.forEach(server => {
@@ -201,19 +236,23 @@ export class XenvHqWidget extends WaltzWidget {
         return this.view.$$('settings');
     }
 
+    get $$panel() {
+        return $$(kXenvHqPanelId)
+    }
+
     getTangoRest() {
         return this.app.getContext(kTangoRestContext);
     }
 
     get $$body() {
-        return this.view.$$('body');
+        return $$body;
     }
 
     get main() {
         return this.servers.find(server => server.name === "HeadQuarter", true);
     }
 
-    get configuration() {
+    get configurationManager() {
         return this.servers.find(server => server.name === "ConfigurationManager", true);
     }
 
@@ -288,11 +327,11 @@ export class XenvHqWidget extends WaltzWidget {
 
     body() {
         return {
-            id: 'body',
+            isolate: true,
             rows: [
                 newXenvHqBody({
                     root: this,
-                    configurationManager: this.configuration,
+                    configurationManager: this.configurationManager,
                     dataFormatServer: this.data_format_server
                 }),
                 newXenvHqBottom({
@@ -302,8 +341,14 @@ export class XenvHqWidget extends WaltzWidget {
         }
     }
 
+    leftPanel() {
+        return newXenvHqLeftPanel({
+            root: this
+        });
+    }
+
     async run() {
-        const tab = this.view || $$(this.app.getWidget('widget:main').mainView.addView(this.ui()));
+        const tab = this.view || $$(this.app.getWidget(kMainWindow).mainView.addView(this.ui()));
         webix.extend(tab, webix.ProgressBar);
         webix.DragControl.addDrop(this.$$settings.getNode(), {
             $drop: () => {
@@ -316,19 +361,35 @@ export class XenvHqWidget extends WaltzWidget {
         })
         tab.showProgress();
 
+
         await this.servers.waitData;
 
         tab.hideProgress();
         const requiredServers = this.servers.find(server => kRequiredServers.includes(server.name))
         if (requiredServers.length === kRequiredServers.length) {
+            this.collections.load(
+                newTangoAttributeProxy(this.getTangoRest(), TangoId.fromDeviceId(this.configurationManager.id).setName("dataSourceCollections")))
+
             //OK
-            //TODO left panel
-            const $$body = this.$$body || $$(this.view.addView(this.body()));
+            this.initializeLeftPanel();
+
+
+            $$body = this.$$body || $$(this.view.addView(this.body()));
             $$body.show();
-            this.updateSubscriptions();
+
+            $$body.$$('datasources').$$('list').bind(this.collections);
+            // this.updateSubscriptions();
         } else {
             this.dispatch(kWidgetRequiersServers, kTopicLog, kChannelLog);
         }
+    }
+
+    initializeLeftPanel() {
+        const panel = $$(kXenvLeftPanel) || $$(this.app.getWidget(kMainWindow).leftPanel.addView(this.leftPanel()));
+
+        this.$$panel.$$('list').data.sync(this.collections);
+
+        this.$$panel.$$('frmCollectionSettings').bind(this.$$panel.$$('list'));
     }
 
     async updateAndRestartAll() {
@@ -363,24 +424,75 @@ export class XenvHqWidget extends WaltzWidget {
             }
         });
     }
+
+    /**
+     *
+     * @param {{id, value}} collection
+     * @return {Promise<void>}
+     */
+    addCollection(collection) {
+        this.collections.add(collection);
+    }
+
+    /**
+     *
+     * @param {string} collectionId
+     * @return {Promise<void>}
+     */
+    async selectCollection(collectionId) {
+        const rest = await this.getTangoRest();
+        return rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
+            .newAttribute("datasourcescollection")
+            .write(collectionId)
+            .toPromise();
+    }
+
+
+    deleteCollection(collection) {
+        return new Promise(function (success, fail) {
+            webix.modalbox({
+                buttons: ["No", "Yes"],
+                width: 500,
+                text: `<span class='webix_icon fa-exclamation-circle'></span><p>This will delete data sources collection ${collection} and all associated data sources! Proceed?</p>`,
+                callback: function (result) {
+                    if (result === "1") success();
+                }
+            });
+        }).then(() => {
+            this.collections.remove(collection);
+        });
+    }
+
+    cloneCollection(collection, source) {
+        return this.getTangoRest()
+            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
+                .newCommand('cloneCollection')
+                .execute([collection, source])
+                .toPromise())
+    }
 }
 
 
-export function newTangoAttributeProxy(rest, host, device, attr) {
+/**
+ *
+ * @param {Promise<TangoRestApi>} rest
+ * @param {TangoId} attrId
+ * @return {{$proxy: boolean, load(*, *): void}}
+ */
+export function newTangoAttributeProxy(rest, attrId) {
     return {
         $proxy: true,
         load(view, params) {
-            if(view.clearAll)
-                view.clearAll();
-            view.parse(rest.request().hosts(host).devices(device).attributes(attr).value().get()
-                .then(value => JSON.parse(value.value))
-                .catch(err => TangoWebappHelpers.error(err)));
-        },
-        save(view, params, dp) {
-            //TODO
-        },
-        result() {
-
+            view.clearAll();
+            return rest.then(rest => rest.newTangoAttribute(attrId)
+                .toTangoRestApiRequest()
+                .value()
+                .get('', {
+                    headers: {
+                        "Accept": "text/plain"
+                    }
+                })
+                .subscribe(resp => view.parse(resp)));
         }
     };
 }
