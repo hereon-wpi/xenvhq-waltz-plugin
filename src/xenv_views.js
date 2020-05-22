@@ -236,9 +236,9 @@ function newDataSourceCollectionForm(config) {
 
                             const values = $$frm.getValues();
 
-                            config.root.addCollection(values);
+                            const id = config.root.addCollection(values);
 
-
+                            this.getTopParentView().$$('list').select(id);
                         }
                     }
                 ]
@@ -266,8 +266,14 @@ export function newXenvHqLeftPanel(config) {
                     select: true,
                     template: "#id#",
                     on: {
+                        onItemClick(id) {
+                            if (this.getSelectedId() === id) {
+                                this.unselectAll()
+                                this.select(id);
+                            }
+                        },
                         onAfterSelect(id) {
-                            config.root.selectCollection(id).then(() => config.root.collections.setCursor(id));
+                            config.root.selectCollection(id);
                         },
                         onAfterLoad() {
                             if (this.count() > 0)

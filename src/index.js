@@ -28,7 +28,7 @@ export const kXenvHqPanelId = kXenvLeftPanel + ':body';
 const kMainWindow = 'widget:main';
 //from Waltz.LogController
 const kChannelLog = 'channel:log';
-const kTopicLog = 'topic:log';
+export const kTopicLog = 'topic:log';
 const kTopicError = 'topic:error';
 
 const kFirstFound = true;
@@ -363,12 +363,24 @@ export class XenvHqWidget extends WaltzWidget {
 
 
         await this.servers.waitData;
+        const rest = await this.getTangoRest();
 
         tab.hideProgress();
         const requiredServers = this.servers.find(server => kRequiredServers.includes(server.name))
         if (requiredServers.length === kRequiredServers.length) {
-            this.collections.load(
-                newTangoAttributeProxy(this.getTangoRest(), TangoId.fromDeviceId(this.configurationManager.id).setName("dataSourceCollections")))
+            //load collections
+            this.collections.clearAll();
+            this.collections.parse(
+                rest.newTangoAttribute(TangoId.fromDeviceId(this.configurationManager.id).setName("dataSourceCollections"))
+                    .toTangoRestApiRequest()
+                    .value()
+                    .get('', {
+                        headers: {
+                            "Accept": "text/plain"
+                        }
+                    })
+                    .toPromise()
+            )
 
             //OK
             this.initializeLeftPanel();
@@ -376,8 +388,6 @@ export class XenvHqWidget extends WaltzWidget {
 
             $$body = this.$$body || $$(this.view.addView(this.body()));
             $$body.show();
-
-            $$body.$$('datasources').$$('list').bind(this.collections);
             // this.updateSubscriptions();
         } else {
             this.dispatch(kWidgetRequiersServers, kTopicLog, kChannelLog);
@@ -431,7 +441,7 @@ export class XenvHqWidget extends WaltzWidget {
      * @return {Promise<void>}
      */
     addCollection(collection) {
-        this.collections.add(collection);
+        return this.collections.add(collection);
     }
 
     /**
@@ -444,7 +454,9 @@ export class XenvHqWidget extends WaltzWidget {
         return rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
             .newAttribute("datasourcescollection")
             .write(collectionId)
-            .toPromise();
+            .toPromise()
+            .then(() => this.collections.setCursor(collectionId))
+            .then(() => this.$$body.$$('datasources').update(collectionId));
     }
 
 
@@ -472,34 +484,4 @@ export class XenvHqWidget extends WaltzWidget {
     }
 }
 
-
-/**
- *
- * @param {Promise<TangoRestApi>} rest
- * @param {TangoId} attrId
- * @return {{$proxy: boolean, load(*, *): void}}
- */
-function newTangoAttributeProxy(rest, attrId) {
-    return {
-        $proxy: true,
-        /**
-         *
-         * @param view
-         * @param params
-         * @return {Promise<void | Subject | PushSubscription>}
-         */
-        load(view, params) {
-            view.clearAll();
-            return rest.then(rest => rest.newTangoAttribute(attrId)
-                .toTangoRestApiRequest()
-                .value()
-                .get('', {
-                    headers: {
-                        "Accept": "text/plain"
-                    }
-                })
-                .subscribe(resp => view.parse(resp)));
-        }
-    };
-}
 

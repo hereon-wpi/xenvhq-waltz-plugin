@@ -7,7 +7,8 @@
 import {newSearch, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import {DataSource} from "./xenv_models.js";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {newTangoAttributeProxy} from "./index";
+import {kTopicLog} from "./index";
+import {kChannelLog} from "@waltz-controls/waltz-user-context-plugin";
 
 /**
  *
@@ -119,40 +120,16 @@ function newDataSourcesList(parent){
         scheme: {
             // add
             $init(obj) {
-                obj.id = obj._id;//copy mongodb _id
+                if (obj && obj._id) obj.id = obj._id;//copy mongodb _id
             }
         },
-        url: null,
         on: {
-            onBindRequest() {
-                this.clearAll();
-            },
-            onBindUpdate() {
-                debugger
-            },
-            async onBindApply(obj) {
-                if (!obj) return;
-                const rest = await parent.getTangoRest();
-                this.parse(
-                    rest.newTangoAttribute(TangoId.fromDeviceId(parent.config.configurationManager.id).setName('datasources'))
-                        .toTangoRestApiRequest()
-                        .value()
-                        .get('', {
-                            headers: {
-                                "Accept": "text/plain"
-                            }
-                        })
-                        .toPromise());
-            },
             onItemClick(id) {
                 if (this.getSelectedId() === id) {
                     this.unselectAll();
                 } else {
                     this.select(id);
                 }
-            },
-            onAfterSelect(id) {
-                parent.datasources.setCursor(id);
             },
             onBlur(){
                 // $$hq.pushConfiguration();
@@ -224,7 +201,15 @@ const datasources_view = webix.protoUI({
         }
     },
 
-    processDataSource(operation, dataSource){
+    setCollection() {
+        if (!this.collectionId) {
+            this.config.root.dispatchError("no XenvHQ DataSources Collection is selected!", kTopicLog, kChannelLog)
+            throw new Error("no XenvHQ DataSources Collection is selected!");
+        }
+        return this.config.root.selectCollection(this.collectionId);
+    },
+
+    processDataSource(operation, dataSource) {
         return this.setCollection()
             .then(() => this.getTangoRest())
             .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
@@ -232,60 +217,81 @@ const datasources_view = webix.protoUI({
                 .execute(JSON.stringify(dataSource))
                 .toPromise())
     },
-    addDataSource(dataSource){
+    addDataSource(dataSource) {
         return this.processDataSource("insert",dataSource)
             .then(() => {
-                return this.datasources.add(dataSource)
+                return this.$$('list').add(dataSource)
             })
     },
     updateDataSource(dataSource){
         return this.processDataSource("update", dataSource)
             .then(() => {
-                this.datasources.updateItem(dataSource.id, dataSource);
+                this.$$('list').updateItem(dataSource.id, dataSource);
             })
     },
     deleteDataSource(dataSource){
         return this.processDataSource("delete", dataSource).
             then(() => {
-                this.datasources.remove(dataSource.id);
+            this.$$('list').remove(dataSource.id);
         })
     },
     /**
      *
      * @param {TangoId} id
      */
-    dropAttr(id){
-        const attr = TangoAttribute.find_one(id);
-        if(attr == null) return;
+    async dropAttr(id) {
+        const rest = await this.getTangoRest();
+        const data_type = await rest.newTangoAttribute(id).toTangoRestApiRequest()
+            .get('?filter=data_type')
+            .toPromise();
 
-        const device = TangoDevice.find_one(attr.device_id);
-        const $$list = this.$$('listDataSources');
         this.addDataSource(new DataSource(
             webix.uid(),
-            `tango://${attr.id}`,
-            `/entry/hardware/${device.name}/${attr.name}`,
+            `tango://${id.getTangoMemberId()}`,
+            `/entry/hardware/${id.getTangoDeviceName()}/${id.name}`,
             "log",
             200,
-            DataSource.devDataTypeToNexus(attr.info.data_type)))
+            DataSource.devDataTypeToNexus(data_type.info.data_type)))
             .then(id => {
-                $$list.select(id);
+                this.$$('list').select(id);
             });
+    },
+    update(collectionId) {
+        if (this.collectionId === collectionId) return;
+        this.collectionId = collectionId;
+        this.datasources.clearAll();
+        this.datasources.parse(this.getTangoRest()
+            .then(rest => rest.newTangoAttribute(TangoId.fromDeviceId(this.config.configurationManager.id).setName('datasources'))
+                .toTangoRestApiRequest()
+                .value()
+                .get('', {
+                    headers: {
+                        "Accept": "text/plain"
+                    }
+                }).toPromise()))
     },
     $init(config) {
         webix.extend(config, this._ui());
+
+        this.collectionId = undefined;
+        this.datasources = new webix.DataCollection();
+
+        this.$ready.push(() => {
+            this.$$('list').sync(this.datasources);
+        })
 
         this.$ready.push(() => {
             this.$$('frmDataSource').bind(this.$$('list'));
         });
 
-        this.addDrop(this.getNode(),{
+        this.addDrop(this.getNode(), {
             /**
              * @function
              */
-            $drop:function(source, target){
+            $drop: function (source, target) {
                 var dnd = webix.DragControl.getContext();
                 if(dnd.from.config.$id === 'attrs') {
-                    this.dropAttr(dnd.source[0]);
+                    this.dropAttr(TangoId.fromMemberId(dnd.source[0]));
                 }
 
                 return false;
