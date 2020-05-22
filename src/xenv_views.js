@@ -210,9 +210,8 @@ function newDataSourceCollectionForm(config) {
             {
                 view: "text",
                 name: "id",
-                label: "DataSources collection",
+                label: "Name",
                 labelAlign: "right",
-                labelWidth: 200,
                 validate: webix.rules.isNotEmpty
             },
             {
