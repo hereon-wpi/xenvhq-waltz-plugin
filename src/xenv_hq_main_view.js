@@ -139,14 +139,14 @@ const main = webix.protoUI({
     get servers(){
         return this.$$('listServers');
     },
-    get data(){
+    get collections() {
         return this.$$('listCollections');
     },
     resetDataSources(){
-        this.$$('listCollections').data.each(item => {
+        this.collections.data.each(item => {
             item.markCheckbox = 0;
         });
-        this.$$('listCollections').refresh();
+        this.collections.refresh();
     },
     prepareCollections(){
         const result = {
@@ -154,7 +154,7 @@ const main = webix.protoUI({
             svalue: []
         };
 
-        this.data.data.each(item => {
+        this.collections.data.each(item => {
             result.svalue.push(item.id);
             result.lvalue.push(item.markCheckbox);
         });
@@ -188,7 +188,7 @@ const main = webix.protoUI({
         this.$ready.push(() => {
 
 
-            this.data.data.sync(config.root.collections);
+            this.collections.data.sync(config.root.collections);
             this.servers.data.sync(config.root.servers);
         });
     },
