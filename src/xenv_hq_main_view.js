@@ -186,6 +186,9 @@ const main = webix.protoUI({
         webix.extend(config, this._ui(config));
 
         this.$ready.push(() => {
+
+
+            this.data.data.sync(config.root.collections);
             this.servers.data.sync(config.root.servers);
         });
     },
