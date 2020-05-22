@@ -122,15 +122,27 @@ function newDataSourcesList(parent){
                 obj.id = obj._id;//copy mongodb _id
             }
         },
+        url: null,
         on: {
-            onBindApply(obj) {
+            onBindRequest() {
+                this.clearAll();
+            },
+            onBindUpdate() {
                 debugger
+            },
+            async onBindApply(obj) {
                 if (!obj) return;
-                //TODO check argument?
-                this.load(
-                    newTangoAttributeProxy(
-                        parent.getTangoRest(),
-                        TangoId.fromDeviceId(parent.config.configurationManager.id).setName('datasources')))
+                const rest = await parent.getTangoRest();
+                this.parse(
+                    rest.newTangoAttribute(TangoId.fromDeviceId(parent.config.configurationManager.id).setName('datasources'))
+                        .toTangoRestApiRequest()
+                        .value()
+                        .get('', {
+                            headers: {
+                                "Accept": "text/plain"
+                            }
+                        })
+                        .toPromise());
             },
             onItemClick(id) {
                 if (this.getSelectedId() === id) {
@@ -157,7 +169,7 @@ const dataSourcesProxy = {
         save(view, params, dp) {
             switch (params.operations) {
                 case "insert":
-                    
+
             }
         },
         result() {
@@ -259,36 +271,10 @@ const datasources_view = webix.protoUI({
                 $$list.select(id);
             });
     },
-    update() {
-        // this.datasources.clearAll();
-        // this.datasources.parse(
-        //     this.getTangoRest().then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
-        //         .newAttribute("datasources")
-        //         .read()
-        //         .pipe(
-        //             map(resp => resp.value)
-        //         )
-        //         .toPromise()));
-
-
-    },
-
     $init(config) {
         webix.extend(config, this._ui());
 
         this.$ready.push(() => {
-            // const list = this.$$("selectDataSources").getPopup().getList();
-            //
-            // list.attachEvent("onAfterSelect", id => {
-            //     this.selectCollection(id);
-            //     this.collections.setCursor(id);
-            // });
-            // list.sync(this.collections);
-            //
-            // this.$$("txtCollectionProtoSuggest").getList().sync(this.collections);
-            // this.$$("frmCollectionSettings").bind(list);
-
-
             this.$$('frmDataSource').bind(this.$$('list'));
         });
 
@@ -305,15 +291,6 @@ const datasources_view = webix.protoUI({
                 return false;
             }.bind(this)
         });
-    },
-    defaults: {
-        on: {
-            onViewShow() {
-                //TODO
-                // if (this.config.configurationManager.device == null) return;
-                // this.collections.load(newTangoAttributeProxy(PlatformContext.rest, this.config.host, this.config.device, "datasourcecollections"));
-            }
-        }
     }
 }, WaltzWidgetMixin, webix.DragControl, webix.IdSpace, webix.ui.layout);
 

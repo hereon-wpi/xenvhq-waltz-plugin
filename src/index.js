@@ -479,9 +479,15 @@ export class XenvHqWidget extends WaltzWidget {
  * @param {TangoId} attrId
  * @return {{$proxy: boolean, load(*, *): void}}
  */
-export function newTangoAttributeProxy(rest, attrId) {
+function newTangoAttributeProxy(rest, attrId) {
     return {
         $proxy: true,
+        /**
+         *
+         * @param view
+         * @param params
+         * @return {Promise<void | Subject | PushSubscription>}
+         */
         load(view, params) {
             view.clearAll();
             return rest.then(rest => rest.newTangoAttribute(attrId)
