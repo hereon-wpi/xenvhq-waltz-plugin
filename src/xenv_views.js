@@ -4,16 +4,20 @@ import 'codemirror/mode/xml/xml.js';
 import {newXenvMainBody} from "./xenv_hq_main_view.js";
 import {newDataSourcesBody} from "./xenv_datasources_view.js";
 import {kXenvHqPanelId, kXenvLeftPanel} from "./index";
+import {newDfsViewBody} from "./xenv_dfs_view";
+import {newStatusServerViewBody} from "./xenv_status_server_view";
+import {newCamelIntegrationViewBody} from "./xenv_camel_view";
+import {newPredatorViewBody} from "./xenv_predator_view";
 
 const xml = webix.protoUI({
     name: "xml",
-    update(value){
+    update(value) {
         if (!value || !this.editor) return;
         this.setValue(value);
     }
-},codemirror_textarea);
+}, codemirror_textarea);
 
-export function newXmlView(){
+export function newXmlView() {
     return {
         gravity: 2,
         rows: [

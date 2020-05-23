@@ -19,8 +19,10 @@ const kServerFieldMap = {
     "PreExperimentDataCollector": "predator"
 };
 
+export const kAlertIcon = '<span class="webix_icon mdi mdi-chat-alert"></span>';
 const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv HQ';
-const kWidgetRequiersServers = '<span class="webix_icon mdi mdi-chat-alert"></span> XenvHQ widget requires at least 3 servers to be defined: ' + kRequiredServers.map(serverName => `<div>${serverName}</div>`).join('');
+const kWidgetRequiersServers = `${kAlertIcon} XenvHQ widget requires at least 3 servers to be defined: 
+${kRequiredServers.map(serverName => `<div>${serverName}</div>`).join('')}`;
 
 export const kWidgetXenvHq = 'widget:xenvhq:root';
 export const kXenvLeftPanel = kWidgetXenvHq + ':accordionitem';

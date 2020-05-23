@@ -1,5 +1,9 @@
-import {newSearch} from "@waltz-controls/waltz-webix-extensions";
+import {newSearch, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import {newXenvServerLog} from "./xenv_views.js";
+import {TangoId} from "@waltz-controls/tango-rest-client";
+import {from} from "rxjs";
+import {mergeMap} from "rxjs/operators";
+import {kAlertIcon, kChannelLog, kTopicLog} from "./index";
 
 const DfsViewBodyHeader = {
     id: 'header',
@@ -50,9 +54,9 @@ const DfsViewBodyMain = {
                     view: "datatable",
                     id:"attributes",
                     header: false,
-                    columns:[
-                        {id:'name'},
-                        {id:'value', fillspace: true}
+                    columns: [
+                        {id: 'name'},
+                        {id: 'value', fillspace: true}
                     ],
                     data: kDfsData
                 }
@@ -61,22 +65,41 @@ const DfsViewBodyMain = {
     ]
 };
 
+const kFindAll = () => true;
+
 const dfs = webix.protoUI({
     name: "dfs",
-    async update(){
-        this.$$('header').setValues(this.config.dataFormatServer);
+    async update() {
+        const rest = await this.getTangoRest();
+        rest.newTangoAttribute(TangoId.fromDeviceId(this.config.configurationManager.id).setName('nexusFileWebixXml'))
+            .read()
+            .subscribe(resp => {
+                this.$$('nxTemplate').clearAll();
+                this.$$('nxTemplate').parse(resp.value, "xml");
+            })
+
 
         const $$attributes = this.$$('attributes');
-        $$attributes.data.each(async item => {
-            const value = await this.config.dataFormatServer.fetchAttrValue(item.id);
-            $$attributes.updateItem(item.id, {
-                value
-            })
-        });
+        const attrs = $$attributes.find(kFindAll);
 
-        const nexusFileXml = await this.config.configurationManager.readNexusFileWebix();
-        this.$$('nxTemplate').clearAll();
-        this.$$('nxTemplate').parse(nexusFileXml,"xml");
+        if (this.config.dataFormatServer) {
+
+            this.$$('header').setValues(this.config.dataFormatServer);
+
+            rest.newTangoDevice(TangoId.fromDeviceId(this.config.dataFormatServer.id))
+                .toTangoRestApiRequest()
+                .attributes()
+                .value()
+                .get(`?${attrs.map(attr => 'attr=' + attr.name).join('&')}`)
+                .pipe(
+                    mergeMap(resp => from(resp))
+                ).subscribe(update => {
+                debugger
+            })
+        } else {
+            this.config.root.dispatch(`${kAlertIcon} DataFormatServer is not set!`, kTopicLog, kChannelLog);
+        }
+
     },
     _ui(){
         return {
@@ -95,19 +118,17 @@ const dfs = webix.protoUI({
     defaults:{
         on:{
             "DataFormatServer.update.status subscribe"(event){
-                this.$$('log').add(event,0);
+                this.$$('log').add(event, 0);
                 this.$$('header').setValues({
                     status: event.data
                 });
             },
-            onViewShow(){
-                //TODO
-                // if(this.config.configurationManager.device == null) return;
-                // this.update();
+            onViewShow() {
+                this.update();
             }
         }
     }
-},  webix.IdSpace, webix.ui.layout);
+}, WaltzWidgetMixin, webix.IdSpace, webix.ui.layout);
 
 export function newDfsViewBody(config) {
     return webix.extend({

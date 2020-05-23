@@ -71,7 +71,7 @@ function newDataSourceForm(parent){
                             if (!$$form.validate()) return;
 
                             const obj = $$form.getValues();
-                            if (parent.$$("listDataSources").getSelectedId() == obj.id) {
+                            if (parent.$$("list").getSelectedId() == obj.id) {
                                 parent.updateDataSource(obj);
                             } else {
                                 obj.id = webix.uid();
@@ -165,7 +165,7 @@ function newSortButton(by) {
         label: `<span class='webix_strong'>${by}</span>`,
         dir: "asc",
         click() {
-            this.getTopParentView().$$('listDataSources').sort(by, this.config.dir);
+            this.getTopParentView().$$('list').sort(by, this.config.dir);
             this.config.dir = this.config.dir === "asc" ? "desc" : "asc";
         }
     }
