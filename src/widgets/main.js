@@ -3,6 +3,7 @@ import {newXenvHqBody, newXenvHqBottom, newXenvHqLeftPanel} from "xenv_views";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kChannelLog, kMainWindow, kTopicError, kTopicLog, kWidgetXenvHq, kXenvHqPanelId, kXenvLeftPanel} from "index";
 import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
+import {concat} from "rxjs";
 
 const kWidgetXenvHqMain = 'widget:xenvhq:main';
 
@@ -56,6 +57,10 @@ export default class XenvHqMainWidget extends WaltzWidget {
         });
     }
 
+    get view() {
+        return this.root.view;
+    }
+
     get $$panel() {
         return $$(kXenvHqPanelId);
     }
@@ -78,7 +83,6 @@ export default class XenvHqMainWidget extends WaltzWidget {
 
     ui() {
         return {
-            isolate: true,
             rows: [
                 newXenvHqBody({
                     root: this,
@@ -103,7 +107,7 @@ export default class XenvHqMainWidget extends WaltzWidget {
         this.initializeLeftPanel();
 
 
-        this.$$body = this.$$body || $$(this.root.view.addView(this.ui()));
+        this.$$body = this.$$body || $$(this.view.addView(this.ui()));
         this.$$body.show();
     }
 
@@ -116,7 +120,7 @@ export default class XenvHqMainWidget extends WaltzWidget {
     }
 
     async updateAndRestartAll() {
-        if (!this.main) {
+        if (!this.root.main) {
             this.dispatch("Can not perform action: main server has not been set!", kTopicLog, kChannelLog);
             return;
         }
@@ -169,7 +173,7 @@ export default class XenvHqMainWidget extends WaltzWidget {
             .write(collectionId)
             .toPromise()
             .then(() => this.collections.setCursor(collectionId))
-            .then(() => this.$$body.$$('datasources').update(collectionId));
+            .then(() => this.view.$$('datasources').update(collectionId));
     }
 
 
