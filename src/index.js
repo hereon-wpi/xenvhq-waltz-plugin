@@ -150,9 +150,6 @@ export class XenvHqWidget extends WaltzWidget {
             }
         });
 
-
-
-
         kServers.forEach(server => {
             this.listen(update => {
                 //TODO error
@@ -207,6 +204,7 @@ export class XenvHqWidget extends WaltzWidget {
     }
 
     updateSubscriptions() {
+        this.servers.data.each(server => this.unsubscribe(server))
         this.servers.data.each(server => this.subscribe(server))
     }
 
@@ -322,7 +320,7 @@ export class XenvHqWidget extends WaltzWidget {
             new XenvHqMainWidget(this.app).run();
 
 
-            // this.updateSubscriptions();
+            this.updateSubscriptions();
         } else {
             this.dispatch(kWidgetRequiersServers, kTopicLog, kChannelLog);
         }
