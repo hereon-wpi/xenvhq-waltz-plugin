@@ -3,8 +3,8 @@ import {WaltzWidget} from "@waltz-controls/middleware";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {newXenvHqBody, newXenvHqBottom, newXenvHqLeftPanel, newXenvHqSettings} from "./xenv_views";
-import {concat} from "rxjs";
+import {newXenvHqSettings} from "xenv_views";
+import XenvHqMainWidget from "widgets/main";
 
 const kRequiredServers = ["HeadQuarter", "ConfigurationManager", "XenvManager"];
 const kServers = ["HeadQuarter", "ConfigurationManager", "XenvManager", "StatusServer2", "DataFormatServer", "CamelIntegration", "PreExperimentDataCollector"];
@@ -25,11 +25,11 @@ const kWidgetRequiersServers = '<span class="webix_icon mdi mdi-chat-alert"></sp
 export const kWidgetXenvHq = 'widget:xenvhq:root';
 export const kXenvLeftPanel = kWidgetXenvHq + ':accordionitem';
 export const kXenvHqPanelId = kXenvLeftPanel + ':body';
-const kMainWindow = 'widget:main';
+export const kMainWindow = 'widget:main';
 //from Waltz.LogController
-const kChannelLog = 'channel:log';
+export const kChannelLog = 'channel:log';
 export const kTopicLog = 'topic:log';
-const kTopicError = 'topic:error';
+export const kTopicError = 'topic:error';
 
 const kFirstFound = true;
 
@@ -78,8 +78,6 @@ class ContextEntity {
         this.name = name;
     }
 }
-
-let $$body;
 
 /**
  * @event CamelIntegration.Status
@@ -151,29 +149,7 @@ export class XenvHqWidget extends WaltzWidget {
         });
 
 
-        const collectionsProxy = {
-            $proxy: true,
-            save: (view, params, dp) => {
-                switch (params.operation) {
-                    case "insert":
-                        return ((params.data.value) ?
-                            this.cloneCollection(params.id, params.data.value) :
-                            this.selectCollection(params.id).then(resp => this.collections.updateItem(params.id, resp)))
-                            .then(() => this.collections.updateItem(params.id, {value: params.id}));
-                    case "delete":
-                        return this.getTangoRest()
-                            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
-                                .newCommand('deleteCollection')
-                                .execute(params.id)
-                                .toPromise())
 
-                }
-            },
-            // updateFromResponse: true//TODO does this work?
-        }
-        this.collections = new webix.DataCollection({
-            save: collectionsProxy
-        });
 
         kServers.forEach(server => {
             this.listen(update => {
@@ -236,16 +212,8 @@ export class XenvHqWidget extends WaltzWidget {
         return this.view.$$('settings');
     }
 
-    get $$panel() {
-        return $$(kXenvHqPanelId)
-    }
-
     getTangoRest() {
         return this.app.getContext(kTangoRestContext);
-    }
-
-    get $$body() {
-        return $$body;
     }
 
     get main() {
@@ -325,27 +293,7 @@ export class XenvHqWidget extends WaltzWidget {
         }
     }
 
-    body() {
-        return {
-            isolate: true,
-            rows: [
-                newXenvHqBody({
-                    root: this,
-                    configurationManager: this.configurationManager,
-                    dataFormatServer: this.data_format_server
-                }),
-                newXenvHqBottom({
-                    root: this
-                })
-            ]
-        }
-    }
 
-    leftPanel() {
-        return newXenvHqLeftPanel({
-            root: this
-        });
-    }
 
     async run() {
         const tab = this.view || $$(this.app.getWidget(kMainWindow).mainView.addView(this.ui()));
@@ -363,124 +311,19 @@ export class XenvHqWidget extends WaltzWidget {
 
 
         await this.servers.waitData;
-        const rest = await this.getTangoRest();
+
 
         tab.hideProgress();
         const requiredServers = this.servers.find(server => kRequiredServers.includes(server.name))
         if (requiredServers.length === kRequiredServers.length) {
-            //load collections
-            this.collections.clearAll();
-            this.collections.parse(
-                rest.newTangoAttribute(TangoId.fromDeviceId(this.configurationManager.id).setName("dataSourceCollections"))
-                    .toTangoRestApiRequest()
-                    .value()
-                    .get('', {
-                        headers: {
-                            "Accept": "text/plain"
-                        }
-                    })
-                    .toPromise()
-            )
 
-            //OK
-            this.initializeLeftPanel();
+            new XenvHqMainWidget(this.app).run();
 
 
-            $$body = this.$$body || $$(this.view.addView(this.body()));
-            $$body.show();
             // this.updateSubscriptions();
         } else {
             this.dispatch(kWidgetRequiersServers, kTopicLog, kChannelLog);
         }
-    }
-
-    initializeLeftPanel() {
-        const panel = $$(kXenvLeftPanel) || $$(this.app.getWidget(kMainWindow).leftPanel.addView(this.leftPanel()));
-
-        this.$$panel.$$('list').data.sync(this.collections);
-
-        this.$$panel.$$('frmCollectionSettings').bind(this.$$panel.$$('list'));
-    }
-
-    async updateAndRestartAll() {
-        if (!this.main) {
-            this.dispatch("Can not perform action: main server has not been set!", kTopicLog, kChannelLog);
-            return;
-        }
-
-        const collections = this.view.$$('main_tab').prepareCollections();
-
-        const rest = await this.getTangoRest();
-
-        const main = rest.newTangoDevice(TangoId.fromDeviceId(this.main.id));
-        const updateProfileCollections = rest.newTangoDevice(TangoId.fromDeviceId(this.configuration.id)).newCommand("selectCollections");
-        const stopAll = main.newCommand("stopAll");
-        const clearAll = main.newCommand("clearAll");
-        const updateAll = main.newCommand("updateAll");
-        const startAll = main.newCommand("startAll");
-
-        concat(
-            updateProfileCollections.execute(collections),
-            stopAll.execute(),
-            clearAll.execute(),
-            updateAll.execute(),
-            startAll.execute()
-        ).subscribe({
-            next: () => {
-                this.dispatch("Successfully updated and restarted Xenv!", kTopicLog, kChannelLog);
-            },
-            error: () => {
-                this.dispatchError("Failed to updated and restarted Xenv!", kTopicError, kChannelLog);
-            }
-        });
-    }
-
-    /**
-     *
-     * @param {{id, value}} collection
-     * @return {Promise<void>}
-     */
-    addCollection(collection) {
-        return this.collections.add(collection);
-    }
-
-    /**
-     *
-     * @param {string} collectionId
-     * @return {Promise<void>}
-     */
-    async selectCollection(collectionId) {
-        const rest = await this.getTangoRest();
-        return rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
-            .newAttribute("datasourcescollection")
-            .write(collectionId)
-            .toPromise()
-            .then(() => this.collections.setCursor(collectionId))
-            .then(() => this.$$body.$$('datasources').update(collectionId));
-    }
-
-
-    deleteCollection(collection) {
-        return new Promise(function (success, fail) {
-            webix.modalbox({
-                buttons: ["No", "Yes"],
-                width: 500,
-                text: `<span class='webix_icon fa-exclamation-circle'></span><p>This will delete data sources collection ${collection} and all associated data sources! Proceed?</p>`,
-                callback: function (result) {
-                    if (result === "1") success();
-                }
-            });
-        }).then(() => {
-            this.collections.remove(collection);
-        });
-    }
-
-    cloneCollection(collection, source) {
-        return this.getTangoRest()
-            .then(rest => rest.newTangoDevice(TangoId.fromDeviceId(this.configurationManager.id))
-                .newCommand('cloneCollection')
-                .execute([collection, source])
-                .toPromise())
     }
 }
 

@@ -302,7 +302,7 @@ export function newXenvHqLeftPanel(config) {
                         {},
                         {
                             view: "icon",
-                            icon: "mdi mdi-settings",
+                            icon: "mdi mdi-cog",
                             tooltip: "Toggle settings",
                             maxWidth: 30,
                             click() {
