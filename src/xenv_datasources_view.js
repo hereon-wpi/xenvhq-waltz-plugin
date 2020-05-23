@@ -175,6 +175,7 @@ function newSort() {
     return {
         view: "form",
         height: 30,
+        type: 'clean',
         cols: [
             {
                 view: "label",
@@ -256,7 +257,13 @@ const datasources_view = webix.protoUI({
                 this.$$('list').select(id);
             });
     },
+    reset() {
+        this.datasources.clearAll();
+        this.$$('frmDataSource').clear();
+        this.disable();
+    },
     update(collectionId) {
+        this.enable();
         if (this.collectionId === collectionId) return;
         this.collectionId = collectionId;
         this.datasources.clearAll();
@@ -275,6 +282,9 @@ const datasources_view = webix.protoUI({
 
         this.collectionId = undefined;
         this.datasources = new webix.DataCollection();
+
+
+        this.$ready.push(() => this.disable());
 
         this.$ready.push(() => {
             this.$$('list').sync(this.datasources);

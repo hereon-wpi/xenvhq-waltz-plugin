@@ -189,6 +189,8 @@ export default class XenvHqMainWidget extends WaltzWidget {
             });
         }).then(() => {
             this.collections.remove(collection);
+        }).then(() => {
+            this.view.$$('datasources').reset();
         });
     }
 
