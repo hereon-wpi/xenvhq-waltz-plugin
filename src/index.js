@@ -81,6 +81,22 @@ class ContextEntity {
     }
 }
 
+function updateUserContext(server) {
+    return this.getUserContext()
+        .then(userContext =>
+            userContext.updateExt(this.name, ext => {
+                const newContextEntity = new ContextEntity(server);
+                const index = ext.findIndex(contextEntity => contextEntity.name === server.name);
+                if (index > -1) {
+                    ext[index] = newContextEntity;
+                } else {
+                    ext.push(newContextEntity);
+                }
+            }))
+        .then(userContext => userContext.save())
+        .then(() => this.dispatch(`UserContext for ${this.name} has been successfully updated!`, kTopicLog, kChannelLog));
+}
+
 /**
  * @event CamelIntegration.Status
  * @description topic:CamelIntegration.Status channel:kWidgetXenvHq
@@ -97,27 +113,6 @@ export class XenvHqWidget extends WaltzWidget {
             load: () => {
                 return this.getUserContext().then(userContext =>
                     userContext.getOrDefault(this.name, []).map(contextEntity => new XenvServer(contextEntity)))
-            },
-            save: (view, params, dp) => {
-                switch (params.operation) {
-                    case "insert":
-                    case "update":
-                        return this.getUserContext()
-                            .then(userContext =>
-                                userContext.updateExt(this.name, ext => {
-                                    const newContextEntity = new ContextEntity(params.data);
-                                    const index = ext.findIndex(contextEntity => contextEntity.name === params.data.name);
-                                    if (index > -1) {
-                                        ext[index] = newContextEntity;
-                                    } else {
-                                        ext.push(newContextEntity);
-                                    }
-                                }))
-                            .then(userContext => userContext.save())
-                            // .then(() => this.dispatch(`UserContext for ${this.name} has been successfully updated!`, kTopicLog, kChannelLog));
-                    default:
-                        return Promise.resolve();
-                }
             }
         }
 
@@ -133,14 +128,22 @@ export class XenvHqWidget extends WaltzWidget {
             //     new DataFormatServer()
             // ]
             url: proxy,
-            save: proxy,
             on: {
                 onAfterLoad: () => {
                     this.servers.data.each(server => {
                         this.$$settings.$$([kServerFieldMap[server.name]]).setValue(server.id);
                     })
+                },
+                onAfterAdd: (id) => {
+                    const server = this.servers.getItem(id);
+                    updateUserContext.call(this, server);
                 }
             }
+        });
+
+        this.servers.data.attachEvent('onIdChange', (oid, nid) => {
+            const server = this.servers.getItem(nid);
+            updateUserContext.call(this, server);
         });
 
         kServers.forEach(server => {
