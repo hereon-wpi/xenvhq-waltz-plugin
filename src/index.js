@@ -114,7 +114,7 @@ export class XenvHqWidget extends WaltzWidget {
                                     }
                                 }))
                             .then(userContext => userContext.save())
-                            .then(() => this.dispatch(`UserContext for ${this.name} has been successfully updated!`, kTopicLog, kChannelLog));
+                            // .then(() => this.dispatch(`UserContext for ${this.name} has been successfully updated!`, kTopicLog, kChannelLog));
                     default:
                         return Promise.resolve();
                 }
@@ -139,13 +139,6 @@ export class XenvHqWidget extends WaltzWidget {
                     this.servers.data.each(server => {
                         this.$$settings.$$([kServerFieldMap[server.name]]).setValue(server.id);
                     })
-                },
-                onDataUpdate: (id, server) => {
-                    this.dispatch({
-                        ...TangoId.fromDeviceId(server.id),
-                        name: 'status',
-                        value: server.status
-                    }, `${server.name}.Status`, this.name);
                 }
             }
         });
