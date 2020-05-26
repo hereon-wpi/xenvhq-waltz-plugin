@@ -62,6 +62,16 @@ function guessDeviceClass(device) {
             return "ConfigurationManager";
         case "manager":
             return "XenvManager";
+        case "camel":
+            return "CamelIntegration";
+        case "dfs":
+        case "data_format_server":
+            return "DataFormatServer";
+        case "ss":
+        case "status_server":
+            return "StatusServer2";
+        case "predator":
+            return "PreExperimentDataCollector";
         default:
             throw new Error(`Can not guess device class for device ${device}. TangoDb returns classname === 'unknown'`);
 
@@ -149,14 +159,16 @@ export class XenvHqWidget extends WaltzWidget {
         kServers.forEach(server => {
             this.listen(update => {
                 //TODO error
-                //TODO update item
-                debugger
+                this.servers.updateItem(`${update.host}/${update.device}`, {
+                    state: update.data
+                })
             }, `${server}.State`, `${this.name}.subscription`)
 
             this.listen(update => {
                 //TODO error
-                //TODO update item
-                debugger
+                this.servers.updateItem(`${update.host}/${update.device}`, {
+                    status: update.data
+                })
             }, `${server}.Status`, `${this.name}.subscription`)
         })
     }
