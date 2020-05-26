@@ -4,6 +4,7 @@ import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kChannelLog, kMainWindow, kTopicError, kTopicLog, kWidgetXenvHq, kXenvHqPanelId, kXenvLeftPanel} from "index";
 import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
 import {concat} from "rxjs";
+import {mergeMap} from "rxjs/operators"
 
 const kWidgetXenvHqMain = 'widget:xenvhq:main';
 
@@ -53,7 +54,12 @@ export default class XenvHqMainWidget extends WaltzWidget {
         }
         this.collections = new webix.DataCollection({
             url: collectionsProxy,
-            save: collectionsProxy
+            save: collectionsProxy,
+            on: {
+                onAfterLoad: () => {
+                    this.loadSelectedCollections();
+                }
+            }
         });
     }
 
@@ -159,6 +165,19 @@ export default class XenvHqMainWidget extends WaltzWidget {
      */
     addCollection(collection) {
         return this.collections.add(collection);
+    }
+
+    async loadSelectedCollections(){
+        const rest = await this.getTangoRest();
+        return rest.newTangoDevice(this.getConfigurationManagerId())
+            .newAttribute("selectedCollections")
+            .read()
+            .pipe(
+                mergeMap(resp => JSON.parse(resp.value))
+            ).subscribe(update => {
+                this.collections.updateItem(update.id, {markCheckbox: update.value})
+            });
+
     }
 
     /**

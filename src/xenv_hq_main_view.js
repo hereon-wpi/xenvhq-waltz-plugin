@@ -41,25 +41,6 @@ function newDataSourcesView(config) {
                     item.markCheckbox = item.markCheckbox?0:1;
                     this.updateItem(id, item);
                 }
-            },
-            on: {
-                /**
-                 * tick checkboxes
-                 */
-                onAfterLoad(){
-                    this.getTopParentView().config.configurationManager.getSelectedCollections().then(v => {
-                            v
-                                .map(item => {
-                                    const {id, value} = item;
-                                    return {id, markCheckbox: value}
-                                })
-                                .forEach(item => {
-                                        this.updateItem(item.id, item)
-                                    }
-                                )
-                        }
-                    )
-                }
             }
         }
     ]
