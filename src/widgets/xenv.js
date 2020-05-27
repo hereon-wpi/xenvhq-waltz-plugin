@@ -168,16 +168,11 @@ export class XenvHqWidget extends WaltzWidget {
             this.listen(update => {
                 //TODO error
                 const id = `${update.host}/${update.device}`;
-                const serverInstance = this.servers.getItem(id);
-
                 const [timestamp, value] = update.data.split(": ");
 
-                const hasChanged = (serverInstance.status === undefined) || (value !== serverInstance.status);
-                if (hasChanged) {
-                    this.servers.updateItem(id, {
-                        status: value
-                    })
-                }
+                this.servers.updateItem(id, {
+                    status: value
+                })
             }, `${server}.Status`, `${kWidgetXenvHq}.status.subscription`)
         })
     }

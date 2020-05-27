@@ -116,7 +116,7 @@ const dfs = webix.protoUI({
 
         this.$ready.push(() => {
             this.$$('log').data.sync(config.root.view.$$('log'), function(){
-                this.filter(server => server.name === 'DataFormatServer')//DataFormatServer
+                this.filter(update => update.name === 'DataFormatServer')//DataFormatServer
             }.bind(this.$$('log')));
         });
     },

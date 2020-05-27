@@ -35,7 +35,7 @@ const status_server_view = webix.protoUI({
 
         this.$ready.push(() => {
             this.$$('log').data.sync(config.root.view.$$('log'), function(){
-                this.filter(server => server.name === 'StatusServer2')
+                this.filter(update => update.name === 'StatusServer2')
             }.bind(this.$$('log')));
         });
     },

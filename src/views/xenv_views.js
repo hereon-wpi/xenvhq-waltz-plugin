@@ -39,7 +39,8 @@ export function newXenvServerLog() {
             height: "auto",
             template(obj){
                 return `<div>
-                            <p><strong>${obj.value}</strong></strong></p>
+                            <div>${obj.name}</div>
+                            <div><strong>${obj.data}</strong></strong></div>
                             <div><span class="webix_icon mdi mdi-clock-outline"></span>${obj.timestamp} <span class="webix_icon mdi mdi-calendar-clock"></span>${new Date(obj.timestamp)}</div>
                         </div>`;
             }

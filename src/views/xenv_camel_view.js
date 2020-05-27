@@ -35,7 +35,7 @@ const camel_view = webix.protoUI({
 
         this.$ready.push(() => {
             this.$$('log').data.sync(config.root.view.$$('log'), function(){
-                this.filter(server => server.name === 'CamelIntegration')
+                this.filter(update => update.name === 'CamelIntegration')
             }.bind(this.$$('log')));
         });
     },
