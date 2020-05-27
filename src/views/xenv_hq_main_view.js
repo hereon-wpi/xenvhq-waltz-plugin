@@ -139,7 +139,15 @@ const main = webix.protoUI({
         return result;
     },
     run() {
-        this.config.root.updateStateStatus();
+        this.showProgress({
+            type:"top",
+            delay: 500,
+            hide:true
+        });
+        this.config.root.updateStateStatus()
+            .finally(() => {
+                this.hideProgress()
+            });
 
 
     },

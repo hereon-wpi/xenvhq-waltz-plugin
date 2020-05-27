@@ -155,7 +155,7 @@ export default class XenvHqMainWidget extends WaltzWidget {
     }
 
     updateStateStatus(){
-        this.getTangoRest().then(rest => rest.toTangoRestApiRequest()
+        return this.getTangoRest().then(rest => rest.toTangoRestApiRequest()
             .attributes()
             .value()
             .get(`?${this.servers.find(findAll).map(server => ['wildcard=' + server.id + '/state', 'wildcard=' + server.id + '/status']).flat().join('&')}`)
