@@ -3,7 +3,7 @@ import {newXenvServerLog} from "./xenv_views.js";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {from} from "rxjs";
 import {mergeMap} from "rxjs/operators";
-import {kAlertIcon, kChannelLog, kTopicLog, kWidgetXenvHq} from "widgets/xenv";
+import {kAlertIcon, kChannelLog, kTopicLog} from "widgets/xenv";
 
 const DfsViewBodyHeader = {
     id: 'header',
@@ -115,9 +115,9 @@ const dfs = webix.protoUI({
         webix.extend(config, this._ui());
 
         this.$ready.push(() => {
-            config.root.listen(update => {
-                this.$$('log').add(update, 0);
-            }, "DataFormatServer.Status", `${kWidgetXenvHq}.subscription`)
+            this.$$('log').data.sync(config.root.view.$$('log'), function(){
+                this.filter(server => server.name === 'DataFormatServer')//DataFormatServer
+            }.bind(this.$$('log')));
         });
     },
     defaults:{

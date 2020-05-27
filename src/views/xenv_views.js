@@ -39,7 +39,7 @@ export function newXenvServerLog() {
             height: "auto",
             template(obj){
                 return `<div>
-                            <p><strong>${obj.data}</strong></strong></p>
+                            <p><strong>${obj.value}</strong></strong></p>
                             <div><span class="webix_icon mdi mdi-clock-outline"></span>${obj.timestamp} <span class="webix_icon mdi mdi-calendar-clock"></span>${new Date(obj.timestamp)}</div>
                         </div>`;
             }
@@ -178,6 +178,10 @@ export function newXenvHqBody(config){
             {
                 header: "DataSources",
                 body: newDataSourcesBody(config)
+            },
+            {
+                header: "Xenv Log",
+                body: newXenvServerLog(config),
             },
             {
                 header: "DataFormatServer",

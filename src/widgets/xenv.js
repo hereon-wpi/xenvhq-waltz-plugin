@@ -5,7 +5,6 @@ import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
 import {newXenvHqSettings} from "views/xenv_views";
 import XenvHqMainWidget from "widgets/main";
-import {kControllerUserAction, UserAction} from "@waltz-controls/waltz-user-actions-plugin";
 
 const kRequiredServers = ["HeadQuarter", "ConfigurationManager", "XenvManager"];
 const kServers = ["HeadQuarter", "ConfigurationManager", "XenvManager", "StatusServer2", "DataFormatServer", "CamelIntegration", "PreExperimentDataCollector"];
@@ -164,33 +163,22 @@ export class XenvHqWidget extends WaltzWidget {
                 this.servers.updateItem(`${update.host}/${update.device}`, {
                     state: update.data
                 })
-            }, `${server}.State`, `${kWidgetXenvHq}.subscription`)
+            }, `${server}.State`, `${kWidgetXenvHq}.state.subscription`)
 
             this.listen(update => {
                 //TODO error
                 const id = `${update.host}/${update.device}`;
                 const serverInstance = this.servers.getItem(id);
 
-                const [timestamp, value] = update.data.split(": ")[1];
+                const [timestamp, value] = update.data.split(": ");
 
                 const hasChanged = (serverInstance.status === undefined) || (value !== serverInstance.status);
                 if (hasChanged) {
-                    this.dispatch(new class extends UserAction {
-                        constructor() {
-                            super('xenv', `${server}.Status`, 'xenv')
-                        }
-
-                        toMessage() {
-                            return `${kWidgetIcon}<strong>${server}.Status</strong>
-                                <div>${update.data}</div>`;
-                        }
-                    }(), kControllerUserAction);
-
                     this.servers.updateItem(id, {
                         status: value
                     })
                 }
-            }, `${server}.Status`, `${kWidgetXenvHq}.subscription`)
+            }, `${server}.Status`, `${kWidgetXenvHq}.status.subscription`)
         })
     }
 
@@ -212,14 +200,14 @@ export class XenvHqWidget extends WaltzWidget {
             device: tangoId.getTangoDeviceName(),
             attribute: "State",
             type: "change"
-        }), `${server.name}.State`, `${this.name}.subscription`)
+        }), `${server.name}.State`, `${this.name}.state.subscription`)
 
         this.app.registerObservable(`${server.name}.Status`, subscriptions.observe({
             host: tangoId.getTangoHostId(),
             device: tangoId.getTangoDeviceName(),
             attribute: "Status",
             type: "change"
-        }), `${server.name}.Status`, `${this.name}.subscription`)
+        }), `${server.name}.Status`, `${this.name}.status.subscription`)
     }
 
     /**

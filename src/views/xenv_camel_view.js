@@ -1,7 +1,6 @@
 import {newXenvServerLog, newXmlView} from "./xenv_views.js";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
-import {kWidgetXenvHq} from "widgets/xenv";
 
 /**
  *
@@ -35,9 +34,9 @@ const camel_view = webix.protoUI({
         webix.extend(config, this._ui());
 
         this.$ready.push(() => {
-            config.root.listen(event => {
-                this.$$('log').add(event, 0);
-            }, "CamelIntegration.Status", `${kWidgetXenvHq}.subscription`)
+            this.$$('log').data.sync(config.root.view.$$('log'), function(){
+                this.filter(server => server.name === 'CamelIntegration')
+            }.bind(this.$$('log')));
         });
     },
     defaults: {

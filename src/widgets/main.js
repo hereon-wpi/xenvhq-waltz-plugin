@@ -11,11 +11,15 @@ import {
     kXenvLeftPanel
 } from "widgets/xenv";
 import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {concat} from "rxjs";
-import {mergeMap} from "rxjs/operators"
+import {concat, from, Subject} from "rxjs";
+import {filter, groupBy, map, mergeMap, reduce} from "rxjs/operators"
+import {BoundedReverseList} from "@waltz-controls/waltz-webix-extensions";
 
 const kWidgetXenvHqMain = 'widget:xenvhq:main';
 
+const kSubject = new Subject();
+const kAnyTopic = "*";
+const findAll = () => true;
 
 /**
  * @type XenvHqMainWidget
@@ -69,6 +73,27 @@ export default class XenvHqMainWidget extends WaltzWidget {
                 }
             }
         });
+
+        this.listen(update => {
+            kSubject.next(update);
+            //TODO error
+        }, kAnyTopic, `${kWidgetXenvHq}.status.subscription`);
+
+        kSubject.pipe(
+            filter(update => update.name || update.status),
+            map(update => update.name && update.name === 'Status' ? Object.assign(update, {status: update.data})  : update)
+        ).subscribe(update => {
+            const id = `${update.host}/${update.device}`;
+            const [timestamp, value] = update.status.split(": ");
+
+            const {name} = this.servers.getItem(id);
+
+            this.view.$$('log').addFirst({
+                name,
+                value,
+                timestamp
+            });
+        })
     }
 
     get view() {
@@ -123,6 +148,8 @@ export default class XenvHqMainWidget extends WaltzWidget {
 
         this.$$body = this.$$body || $$(this.view.addView(this.ui()));
         this.$$body.show();
+
+        webix.extend(this.view.$$('log'), BoundedReverseList);
     }
 
     initializeLeftPanel() {
@@ -131,6 +158,37 @@ export default class XenvHqMainWidget extends WaltzWidget {
         this.$$panel.$$('list').data.sync(this.collections);
 
         this.$$panel.$$('frmCollectionSettings').bind(this.$$panel.$$('list'));
+    }
+
+    updateStateStatus(){
+        this.getTangoRest().then(rest => rest.toTangoRestApiRequest()
+            .attributes()
+            .value()
+            .get(`?${this.servers.find(findAll).map(server => ['wildcard=' + server.id + '/state', 'wildcard=' + server.id + '/status']).flat().join('&')}`)
+            .pipe(
+                mergeMap(resp => from(resp)),
+                groupBy(update => update.device),
+                mergeMap((group$) => group$.pipe(reduce((acc, cur) => Object.assign(acc, {
+                    host: `${cur.host}`,
+                    device: `${cur.device}`,
+                    [cur.name.toLowerCase()]: cur.value
+                }), {})))
+            ).subscribe(update => {
+                const server = this.servers.getItem(`${update.host}/${update.device}`);
+                this.dispatch({
+                    ...update,
+                    data: update.status
+                }, `${server.name}.Status`, `${kWidgetXenvHq}.status.subscription`);
+
+                this.dispatch({
+                    ...update,
+                    data: update.state
+                }, `${server.name}.State`, `${kWidgetXenvHq}.state.subscription`);
+            })
+        )
+            .catch(e => {
+                debugger
+            })
     }
 
     async updateAndRestartAll() {

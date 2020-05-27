@@ -1,8 +1,5 @@
 import {newSearch, newToolbar, Runnable, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
-import {from} from "rxjs";
-import {groupBy, mergeMap, reduce} from "rxjs/operators";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {kWidgetXenvHq} from "widgets/xenv";
 
 /**
  * From Waltz actions
@@ -11,7 +8,7 @@ import {kWidgetXenvHq} from "widgets/xenv";
  */
 const kActionSelectTangoDevice = 'action:select_tango_device'
 
-const findAll = () => true;
+
 
 function newDataSourcesView(config) {
     return {
@@ -142,34 +139,8 @@ const main = webix.protoUI({
         return result;
     },
     run() {
-        this.getTangoRest().then(rest => rest.toTangoRestApiRequest()
-            .attributes()
-            .value()
-            .get(`?${this.servers.find(findAll).map(server => ['wildcard=' + server.id + '/state', 'wildcard=' + server.id + '/status']).flat().join('&')}`)
-            .pipe(
-                mergeMap(resp => from(resp)),
-                groupBy(update => update.device),
-                mergeMap((group$) => group$.pipe(reduce((acc, cur) => Object.assign(acc, {
-                    host: `${cur.host}`,
-                    device: `${cur.device}`,
-                    [cur.name.toLowerCase()]: cur.value
-                }), {})))
-            ).subscribe(update => {
-                const server = this.servers.getItem(`${update.host}/${update.device}`);
-                this.config.root.dispatch({
-                    ...update,
-                    data: update.status
-                }, `${server.name}.Status`, `${kWidgetXenvHq}.subscription`);
+        this.config.root.updateStateStatus();
 
-                this.config.root.dispatch({
-                    ...update,
-                    data: update.state
-                }, `${server.name}.State`, `${kWidgetXenvHq}.subscription`);
-            })
-        )
-            .catch(e => {
-                debugger
-            })
 
     },
     $init(config) {
