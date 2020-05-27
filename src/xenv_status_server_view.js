@@ -1,7 +1,7 @@
 import {newXenvServerLog, newXmlView} from "./xenv_views.js";
-import {kWidgetXenvHq} from "./index";
 import {WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import {TangoId} from "@waltz-controls/tango-rest-client";
+import {kWidgetXenvHq} from "./index";
 
 /**
  *
@@ -37,7 +37,7 @@ const status_server_view = webix.protoUI({
         this.$ready.push(() => {
             config.root.listen(event => {
                 this.$$('log').add(event, 0);
-            }, "StatusServer2.Status", kWidgetXenvHq)
+            }, "StatusServer2.Status", `${kWidgetXenvHq}.subscription`)
         });
     },
     defaults: {

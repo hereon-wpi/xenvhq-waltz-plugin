@@ -6,8 +6,8 @@ import 'codemirror/mode/yaml/yaml.js';
  * @since 3/27/19
  */
 import {newXenvServerLog} from "./xenv_views.js";
-import {kWidgetXenvHq} from "./index";
 import {TangoId} from "@waltz-controls/tango-rest-client";
+import {kWidgetXenvHq} from "./index";
 
 const meta_yaml = webix.protoUI({
     name: "meta_yaml",
@@ -85,7 +85,7 @@ const predator_view = webix.protoUI({
         this.$ready.push(() => {
             config.root.listen(event => {
                 this.$$('log').add(event, 0);
-            }, "PreExperimentDataCollector.Status", kWidgetXenvHq)
+            }, "PreExperimentDataCollector.Status", `${kWidgetXenvHq}.subscription`)
         });
     },
     defaults: {

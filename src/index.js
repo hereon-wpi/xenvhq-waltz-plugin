@@ -172,16 +172,17 @@ export class XenvHqWidget extends WaltzWidget {
                     status: update.data
                 })
 
-                this.dispatch(new class extends UserAction{
-                    constructor(){
-                        super('xenv',`${server}.Status`,'xenv')
-                    }
+                if(server.status !== update.data)
+                    this.dispatch(new class extends UserAction{
+                        constructor(){
+                            super('xenv',`${server}.Status`,'xenv')
+                        }
 
-                    toMessage(){
-                        return `${kWidgetIcon}<strong>${server}.Status</strong>
-                                <div>${update.data}</div>`;
-                    }
-                }() ,kControllerUserAction);
+                        toMessage(){
+                            return `${kWidgetIcon}<strong>${server}.Status</strong>
+                                    <div>${update.data}</div>`;
+                        }
+                    }() ,kControllerUserAction);
             }, `${server}.Status`, `${kWidgetXenvHq}.subscription`)
         })
     }
