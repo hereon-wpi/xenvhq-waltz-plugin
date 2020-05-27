@@ -5,6 +5,7 @@ import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
 import {newXenvHqSettings} from "xenv_views";
 import XenvHqMainWidget from "widgets/main";
+import {kControllerUserAction, UserAction} from "@waltz-controls/waltz-user-actions-plugin";
 
 const kRequiredServers = ["HeadQuarter", "ConfigurationManager", "XenvManager"];
 const kServers = ["HeadQuarter", "ConfigurationManager", "XenvManager", "StatusServer2", "DataFormatServer", "CamelIntegration", "PreExperimentDataCollector"];
@@ -20,7 +21,8 @@ const kServerFieldMap = {
 };
 
 export const kAlertIcon = '<span class="webix_icon mdi mdi-chat-alert"></span>';
-const kWidgetHeader = '<span class="webix_icon mdi mdi-cube-scan"></span> Xenv HQ';
+const kWidgetIcon = '<span class="webix_icon mdi mdi-cube-scan"></span>';
+const kWidgetHeader = kWidgetIcon + ' Xenv HQ';
 const kWidgetRequiersServers = `${kAlertIcon} XenvHQ widget requires at least 3 servers to be defined: 
 ${kRequiredServers.map(serverName => `<div>${serverName}</div>`).join('')}`;
 
@@ -162,14 +164,25 @@ export class XenvHqWidget extends WaltzWidget {
                 this.servers.updateItem(`${update.host}/${update.device}`, {
                     state: update.data
                 })
-            }, `${server}.State`, `${this.name}.subscription`)
+            }, `${server}.State`, `${kWidgetXenvHq}.subscription`)
 
             this.listen(update => {
                 //TODO error
                 this.servers.updateItem(`${update.host}/${update.device}`, {
                     status: update.data
                 })
-            }, `${server}.Status`, `${this.name}.subscription`)
+
+                this.dispatch(new class extends UserAction{
+                    constructor(){
+                        super('xenv',`${server}.Status`,'xenv')
+                    }
+
+                    toMessage(){
+                        return `${kWidgetIcon}<strong>${server}.Status</strong>
+                                <div>${update.data}</div>`;
+                    }
+                }() ,kControllerUserAction);
+            }, `${server}.Status`, `${kWidgetXenvHq}.subscription`)
         })
     }
 

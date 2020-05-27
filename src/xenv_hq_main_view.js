@@ -2,6 +2,7 @@ import {newSearch, newToolbar, Runnable, WaltzWidgetMixin} from "@waltz-controls
 import {from} from "rxjs";
 import {groupBy, mergeMap, reduce} from "rxjs/operators";
 import {TangoId} from "@waltz-controls/tango-rest-client";
+import {kWidgetXenvHq} from "./index";
 
 /**
  * From Waltz actions
@@ -65,9 +66,7 @@ function newXenvServersView(config) {
                  */
                 template:
                     `<div style="margin: 2em">
-                    <span class="webix_strong">#name#, device: #ver#</span><br>
-					State:  | <span class="webix_strong" style="{common.stateHighlightColor()}">#state#</span> | <br/>
-					Status: |  <span>#status#</span> |<br>
+                    <span class="webix_strong">#name#</span>, State: | <span class="webix_strong" style="{common.stateHighlightColor()}">#state#</span> |<br>
                     </div>`
                 ,
                 type: {
@@ -151,11 +150,21 @@ const main = webix.protoUI({
                 mergeMap(resp => from(resp)),
                 groupBy(update => update.device),
                 mergeMap((group$) => group$.pipe(reduce((acc, cur) => Object.assign(acc, {
-                    id: `${cur.host}/${cur.device}`,
+                    host: `${cur.host}`,
+                    device: `${cur.device}`,
                     [cur.name.toLowerCase()]: cur.value
                 }), {})))
             ).subscribe(update => {
-                this.servers.updateItem(update.id, update);
+                const server = this.servers.getItem(`${update.host}/${update.device}`);
+                this.config.root.dispatch({
+                    ...update,
+                    data: update.status
+                }, `${server.name}.Status`, `${kWidgetXenvHq}.subscription`);
+
+                this.config.root.dispatch({
+                    ...update,
+                    data: update.state
+                }, `${server.name}.State`, `${kWidgetXenvHq}.subscription`);
             })
         )
             .catch(e => {
