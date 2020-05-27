@@ -165,8 +165,8 @@ export default class XenvHqMainWidget extends WaltzWidget {
                 mergeMap((group$) => group$.pipe(reduce((acc, cur) => Object.assign(acc, {
                     host: `${cur.host}`,
                     device: `${cur.device}`,
-                    [cur.name.toLowerCase()]: cur.value
-                }), {})))
+                    [cur.name.toLowerCase()]: cur.value,
+                }), {timestamp: +new Date()})))
             ).subscribe(update => {
                 const server = this.servers.getItem(`${update.host}/${update.device}`);
                 this.dispatch({
