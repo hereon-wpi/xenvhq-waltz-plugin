@@ -3,7 +3,7 @@ import {newXenvServerLog} from "./xenv_views.js";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {from} from "rxjs";
 import {mergeMap} from "rxjs/operators";
-import {kAlertIcon, kChannelLog, kTopicLog, kWidgetXenvHq} from "./index";
+import {kAlertIcon, kChannelLog, kTopicLog, kWidgetXenvHq} from "widgets/xenv";
 
 const DfsViewBodyHeader = {
     id: 'header',

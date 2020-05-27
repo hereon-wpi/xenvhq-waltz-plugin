@@ -7,7 +7,7 @@ import 'codemirror/mode/yaml/yaml.js';
  */
 import {newXenvServerLog} from "./xenv_views.js";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {kWidgetXenvHq} from "./index";
+import {kWidgetXenvHq} from "widgets/xenv";
 
 const meta_yaml = webix.protoUI({
     name: "meta_yaml",

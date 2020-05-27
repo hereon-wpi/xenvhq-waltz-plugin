@@ -1,7 +1,15 @@
 import {WaltzWidget} from "@waltz-controls/middleware";
-import {newXenvHqBody, newXenvHqBottom, newXenvHqLeftPanel} from "xenv_views";
+import {newXenvHqBody, newXenvHqBottom, newXenvHqLeftPanel} from "views/xenv_views";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {kChannelLog, kMainWindow, kTopicError, kTopicLog, kWidgetXenvHq, kXenvHqPanelId, kXenvLeftPanel} from "index";
+import {
+    kChannelLog,
+    kMainWindow,
+    kTopicError,
+    kTopicLog,
+    kWidgetXenvHq,
+    kXenvHqPanelId,
+    kXenvLeftPanel
+} from "widgets/xenv";
 import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
 import {concat} from "rxjs";
 import {mergeMap} from "rxjs/operators"
@@ -144,10 +152,10 @@ export default class XenvHqMainWidget extends WaltzWidget {
 
         concat(
             updateProfileCollections.execute(collections),
-            stopAll.execute(),
-            clearAll.execute(),
-            updateAll.execute(),
-            startAll.execute()
+            // stopAll.execute(),
+            // clearAll.execute(),
+            // updateAll.execute(),
+            // startAll.execute()
         ).subscribe({
             next: () => {
                 this.dispatch("Successfully updated and restarted Xenv!", kTopicLog, kChannelLog);

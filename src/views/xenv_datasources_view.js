@@ -7,7 +7,7 @@
 import {newSearch, WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
 import {DataSource} from "./xenv_models.js";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {kTopicLog} from "./index";
+import {kTopicLog} from "widgets/xenv";
 import {kChannelLog} from "@waltz-controls/waltz-user-context-plugin";
 
 /**

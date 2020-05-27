@@ -2,7 +2,7 @@ import {newSearch, newToolbar, Runnable, WaltzWidgetMixin} from "@waltz-controls
 import {from} from "rxjs";
 import {groupBy, mergeMap, reduce} from "rxjs/operators";
 import {TangoId} from "@waltz-controls/tango-rest-client";
-import {kWidgetXenvHq} from "./index";
+import {kWidgetXenvHq} from "widgets/xenv";
 
 /**
  * From Waltz actions

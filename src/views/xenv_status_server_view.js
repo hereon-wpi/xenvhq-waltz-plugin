@@ -1,7 +1,7 @@
 import {newXenvServerLog, newXmlView} from "./xenv_views.js";
-import {TangoId} from "@waltz-controls/tango-rest-client";
 import {WaltzWidgetMixin} from "@waltz-controls/waltz-webix-extensions";
-import {kWidgetXenvHq} from "./index";
+import {TangoId} from "@waltz-controls/tango-rest-client";
+import {kWidgetXenvHq} from "widgets/xenv";
 
 /**
  *
@@ -10,13 +10,13 @@ import {kWidgetXenvHq} from "./index";
  */
 
 
-const camel_view = webix.protoUI({
-    name: "camel_view",
+const status_server_view = webix.protoUI({
+    name: "status_server_view",
     async update() {
         const rest = await this.getTangoRest();
 
         rest.newTangoDevice(TangoId.fromDeviceId(this.config.configurationManager.id))
-            .newAttribute("camelRoutesXml")
+            .newAttribute("statusServerXml")
             .read()
             .subscribe(resp => {
                 this.$$('xml').update(resp.value);
@@ -37,7 +37,7 @@ const camel_view = webix.protoUI({
         this.$ready.push(() => {
             config.root.listen(event => {
                 this.$$('log').add(event, 0);
-            }, "CamelIntegration.Status", `${kWidgetXenvHq}.subscription`)
+            }, "StatusServer2.Status", `${kWidgetXenvHq}.subscription`)
         });
     },
     defaults: {
@@ -49,8 +49,8 @@ const camel_view = webix.protoUI({
     }
 }, WaltzWidgetMixin, webix.IdSpace, webix.ui.layout);
 
-export function newCamelIntegrationViewBody(config){
+export function newStatusServerViewBody(config){
     return webix.extend({
-        view: "camel_view"
+        view: "status_server_view"
     },config);
 }

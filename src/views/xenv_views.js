@@ -3,7 +3,7 @@ import 'codemirror/mode/xml/xml.js';
 
 import {newXenvMainBody} from "./xenv_hq_main_view.js";
 import {newDataSourcesBody} from "./xenv_datasources_view.js";
-import {kXenvHqPanelId, kXenvLeftPanel} from "./index";
+import {kXenvHqPanelId, kXenvLeftPanel} from "widgets/xenv";
 import {newDfsViewBody} from "./xenv_dfs_view";
 import {newStatusServerViewBody} from "./xenv_status_server_view";
 import {newCamelIntegrationViewBody} from "./xenv_camel_view";

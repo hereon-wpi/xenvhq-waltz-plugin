@@ -1,9 +1,9 @@
-import {ConfigurationManager, DataFormatServer, XenvServer} from "./xenv_models.js";
+import {ConfigurationManager, DataFormatServer, XenvServer} from "views/xenv_models.js";
 import {WaltzWidget} from "@waltz-controls/middleware";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 import {TangoId} from "@waltz-controls/tango-rest-client";
 import {kContextTangoSubscriptions, kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {newXenvHqSettings} from "xenv_views";
+import {newXenvHqSettings} from "views/xenv_views";
 import XenvHqMainWidget from "widgets/main";
 import {kControllerUserAction, UserAction} from "@waltz-controls/waltz-user-actions-plugin";
 
