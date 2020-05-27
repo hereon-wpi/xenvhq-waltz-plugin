@@ -168,21 +168,28 @@ export class XenvHqWidget extends WaltzWidget {
 
             this.listen(update => {
                 //TODO error
-                this.servers.updateItem(`${update.host}/${update.device}`, {
-                    status: update.data
-                })
+                const id = `${update.host}/${update.device}`;
+                const serverInstance = this.servers.getItem(id);
 
-                if(server.status !== update.data)
-                    this.dispatch(new class extends UserAction{
-                        constructor(){
-                            super('xenv',`${server}.Status`,'xenv')
+                const [timestamp, value] = update.data.split(": ")[1];
+
+                const hasChanged = (serverInstance.status === undefined) || (value !== serverInstance.status);
+                if (hasChanged) {
+                    this.dispatch(new class extends UserAction {
+                        constructor() {
+                            super('xenv', `${server}.Status`, 'xenv')
                         }
 
-                        toMessage(){
+                        toMessage() {
                             return `${kWidgetIcon}<strong>${server}.Status</strong>
-                                    <div>${update.data}</div>`;
+                                <div>${update.data}</div>`;
                         }
-                    }() ,kControllerUserAction);
+                    }(), kControllerUserAction);
+
+                    this.servers.updateItem(id, {
+                        status: value
+                    })
+                }
             }, `${server}.Status`, `${kWidgetXenvHq}.subscription`)
         })
     }
