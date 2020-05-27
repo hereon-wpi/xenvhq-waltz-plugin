@@ -239,6 +239,21 @@ function newDataSourceCollectionForm(config) {
             },
             {
                 cols: [
+                    {
+                        view: "icon",
+                        icon: "wxi-trash",
+                        maxWidth: 30,
+                        tooltip: "Delete selected profile",
+                        click() {
+                            // parent.deleteCollection(values.id).then(() => {
+                            //     parent.collections.remove(values.id);
+                            //     parent.datasources.clearAll();
+                            //     parent.$$('selectDataSources').setValue("");
+                            // });
+                            config.root.deleteCollection(config.root.$$panel.$$('list').getSelectedId());
+                            this.getFormView().clear();
+                        }
+                    },
                     {},
                     {
                         view: "icon",
@@ -257,6 +272,70 @@ function newDataSourceCollectionForm(config) {
                         }
                     }
                 ]
+            }
+        ]
+    };
+}
+
+function newFavorites(config){
+    return {
+        id:'favorites',
+        isolate: true,
+        rows: [
+            {
+                id: 'list',
+                view: 'list',
+                select: true,
+                template: '#name#',
+                on:{
+                    onItemClick(id) {
+                        config.root.selectFavorite(id);
+                    }
+                }
+            },
+            {
+                id:'form',
+                view: 'form',
+                cols: [
+                    {
+                        view: "icon",
+                        icon: "wxi-trash",
+                        maxWidth: 30,
+                        tooltip: "Delete selected favorite",
+                        click() {
+                            config.root.deleteFavorite(this.getTopParentView().$$('list').getSelectedId());
+                            this.getFormView().clear();
+                        }
+                    },
+                    {
+                        view: 'text',
+                        type: 'hidden',
+                        hidden: true,
+                        name: 'id'
+                    },
+                    {
+                        view:'text',
+                        name:'name',
+                        placeholder: 'New favorite name'
+                    },
+                    {
+                        view: "icon",
+                        icon: "mdi mdi-star",
+                        maxWidth: 30,
+                        tooltip: "Save new favorite...",
+                        click() {
+                            const $$form = this.getFormView();
+                            $$form.elements.id.setValue(+new Date());
+                            if(!$$form.validate()) return;
+
+                            $$form.clearValidation();
+                            config.root.addFavorite($$form.getValues());
+                        }
+                    }
+                ],
+                rules: {
+                    name: webix.rules.isNotEmpty
+                }
             }
         ]
     };
@@ -298,28 +377,20 @@ export function newXenvHqLeftPanel(config) {
                 },
                 newDataSourceCollectionForm(config),
                 {
+                    view: 'template',
+                    template: '<span class="webix_icon mdi mdi-star-half-full"></span> Favorite Collections presets',
+                    borderless: true,
+                    type:'header'
+                },
+                newFavorites(config),
+                {
                     borderless: true,
                     view: "toolbar",
                     cols: [
                         {
                             view: "icon",
-                            icon: "wxi-trash",
-                            maxWidth: 30,
-                            tooltip: "Delete selected profile",
-                            click() {
-                                // parent.deleteCollection(values.id).then(() => {
-                                //     parent.collections.remove(values.id);
-                                //     parent.datasources.clearAll();
-                                //     parent.$$('selectDataSources').setValue("");
-                                // });
-                                config.root.deleteCollection(config.root.$$panel.$$('list').getSelectedId());
-                            }
-                        },
-                        {},
-                        {
-                            view: "icon",
                             icon: "mdi mdi-cog",
-                            tooltip: "Toggle settings",
+                            tooltip: "Toggle XenvHq settings",
                             maxWidth: 30,
                             click() {
                                 const $$settings = config.root.$$settings;
@@ -327,6 +398,20 @@ export function newXenvHqLeftPanel(config) {
                                     config.root.$$body.show();
                                 else
                                     $$settings.show();
+                            }
+                        },
+                        {},
+                        {
+                            view: "icon",
+                            icon: "mdi mdi-star-half",
+                            tooltip: "Toggle favorites",
+                            maxWidth: 30,
+                            click() {
+                                const $$favorites = this.getTopParentView().$$('favorites');
+                                if ($$favorites.isVisible())
+                                    $$favorites.hide();
+                                else
+                                    $$favorites.show();
                             }
                         },
                         {

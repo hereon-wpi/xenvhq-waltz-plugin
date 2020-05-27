@@ -14,6 +14,7 @@ import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
 import {concat, from, Subject} from "rxjs";
 import {groupBy, map, mergeMap, reduce} from "rxjs/operators"
 import {BoundedReverseList} from "@waltz-controls/waltz-webix-extensions";
+import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 
 const kWidgetXenvHqMain = 'widget:xenvhq:main';
 
@@ -74,6 +75,37 @@ export default class XenvHqMainWidget extends WaltzWidget {
             }
         });
 
+        const favoritesProxy = {
+            $proxy: true,
+            load: () => {
+                return this.getUserContext()
+                    .then(userContext => Object.entries(userContext.getOrDefault(this.name, {})).map(([key, value]) => ({name: key, value})))
+            },
+            save: (view, params) => {
+                return this.getUserContext()
+                    .then(userContext => userContext.updateExt(this.name, ext => {
+                        switch (params.operation) {
+                            case 'insert':
+                            case 'update':
+                                ext[params.data.name] = params.data.value;
+                                return;
+                            case 'delete':
+                                delete ext[params.data.name];
+                        }
+                    }))
+                    .then(userContext => userContext.save())
+                    .then(() => () => this.dispatch("UserContext has been successfully updated!", kTopicLog, kChannelLog))
+                    .then(() => params.data);
+                //TODO catch
+            },
+            updateFromResponse: true
+        }
+
+        this.favorites = new webix.DataCollection({
+            url: favoritesProxy,
+            save: favoritesProxy
+        });
+
         this.listen(update => {
             kSubject.next(update);
             //TODO error
@@ -114,6 +146,10 @@ export default class XenvHqMainWidget extends WaltzWidget {
         return this.app.getContext(kTangoRestContext);
     }
 
+    getUserContext(){
+        return this.app.getContext(kUserContext);
+    }
+
     ui() {
         return {
             rows: [
@@ -152,6 +188,9 @@ export default class XenvHqMainWidget extends WaltzWidget {
         this.$$panel.$$('list').data.sync(this.collections);
 
         this.$$panel.$$('frmCollectionSettings').bind(this.$$panel.$$('list'));
+
+        this.$$panel.$$('favorites').$$('list').data.sync(this.favorites);
+        this.$$panel.$$('favorites').$$('form').bind(this.favorites);
     }
 
     updateStateStatus(){
@@ -279,5 +318,25 @@ export default class XenvHqMainWidget extends WaltzWidget {
                 .newCommand('cloneCollection')
                 .execute([collection, source])
                 .toPromise())
+    }
+
+    addFavorite({id, name}){
+        const value = this.collections.find(findAll).map(collection => ({id: collection.id, markCheckbox: collection.markCheckbox}));
+        this.favorites.add({id, name, value});
+    }
+
+    selectFavorite(id){
+        this.favorites.setCursor(id);
+
+
+        const selected = this.favorites.getItem(id).value;
+        selected.forEach(selected => {
+            const {markCheckbox} = selected;
+            this.collections.updateItem(selected.id, {markCheckbox});
+        })
+    }
+
+    deleteFavorite(id){
+        this.favorites.remove(id);
     }
 }
