@@ -266,6 +266,7 @@ export class XenvHqWidget extends WaltzWidget {
         const server = this.servers.find(server => server.name === device_class, kFirstFound);
 
         if (server) {
+            this.unsubscribe(server);
             this.servers.data.changeId(server.id, device.id)
             this.servers.updateItem(device.id, {
                 status: `Proxy has been set to ${device.id}`,
@@ -303,10 +304,8 @@ export class XenvHqWidget extends WaltzWidget {
         }
     }
 
-
-
-    async run() {
-        const tab = this.view || $$(this.app.getWidget(kMainWindow).mainView.addView(this.ui()));
+    render() {
+        const tab = $$(this.app.getWidget(kMainWindow).mainView.addView(this.ui()));
         webix.extend(tab, webix.ProgressBar);
         webix.DragControl.addDrop(this.$$settings.getNode(), {
             $drop: () => {
@@ -317,6 +316,12 @@ export class XenvHqWidget extends WaltzWidget {
                 }
             }
         })
+        return tab;
+    }
+
+
+    async run() {
+        const tab = this.view || this.render();
         tab.showProgress();
 
 

@@ -11,7 +11,7 @@ import {
     kXenvLeftPanel
 } from "widgets/xenv";
 import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
-import {concat, from, Subject} from "rxjs";
+import {from, Subject} from "rxjs";
 import {groupBy, map, mergeMap, reduce} from "rxjs/operators"
 import {BoundedReverseList} from "@waltz-controls/waltz-webix-extensions";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
@@ -241,20 +241,18 @@ export default class XenvHqMainWidget extends WaltzWidget {
         const updateAll = main.newCommand("updateAll");
         const startAll = main.newCommand("startAll");
 
-        concat(
-            updateProfileCollections.execute(collections),
-            // stopAll.execute(),
-            // clearAll.execute(),
-            // updateAll.execute(),
-            // startAll.execute()
-        ).subscribe({
-            next: () => {
+        return Promise.resolve()
+            .then(() => updateProfileCollections.execute(collections).toPromise())
+            .then(() => stopAll.execute().toPromise())
+            .then(() => clearAll.execute().toPromise())
+            .then(() => updateAll.execute().toPromise())
+            .then(() => startAll.execute().toPromise())
+            .then(() => {
                 this.dispatch("Successfully updated and restarted Xenv!", kTopicLog, kChannelLog);
-            },
-            error: () => {
+            })
+            .catch(() => {
                 this.dispatchError("Failed to updated and restarted Xenv!", kTopicError, kChannelLog);
-            }
-        });
+            })
     }
 
     /**
@@ -263,6 +261,10 @@ export default class XenvHqMainWidget extends WaltzWidget {
      * @return {Promise<void>}
      */
     addCollection(collection) {
+        if (this.collections.exists(collection)) {
+            //TODO message
+            return;
+        }
         return this.collections.add(collection);
     }
 

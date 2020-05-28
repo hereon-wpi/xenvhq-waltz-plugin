@@ -210,7 +210,13 @@ export function newXenvHqBottom(config) {
         value: "Update & Restart all",
         minHeight: 80,
         click() {
+            config.root.view.$$('main_tab').showProgress({
+                type: "top",
+                delay: 500,
+                hide: true
+            });
             config.root.updateAndRestartAll()
+                .finally(() => config.root.view.$$('main_tab').hideProgress())
         }
     }
 }
