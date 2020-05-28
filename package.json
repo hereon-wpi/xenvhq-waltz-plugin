@@ -1,7 +1,8 @@
 {
   "name": "@hzg-wpi/xenvhq-waltz-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "XEnvHQ plugin for Waltz",
+  "main": "dist/module/index.js",
   "module": "dist/module/index.js",
   "directories": {
     "doc": "docs",
