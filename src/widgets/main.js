@@ -293,7 +293,11 @@ export default class XenvHqMainWidget extends WaltzWidget {
             .write(collectionId)
             .toPromise()
             .then(() => this.collections.setCursor(collectionId))
-            .then(() => this.view.$$('datasources').update(collectionId));
+            .then(() => {
+                this.view.$$('datasources').update(collectionId);
+                this.view.show();
+                this.view.$$('datasources').show();
+            });
     }
 
 
