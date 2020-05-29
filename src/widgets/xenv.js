@@ -57,10 +57,13 @@ function devicesTreeIdToTangoId(tree, id) {
 function guessDeviceClass(device) {
     const name = device.split('/')[2];
     switch (name) {
+        case "main":
         case "hq":
             return "HeadQuarter";
         case "config":
+        case "conf":
             return "ConfigurationManager";
+        case "xenv":
         case "manager":
             return "XenvManager";
         case "camel":
