@@ -340,6 +340,9 @@ export default class XenvHqMainWidget extends WaltzWidget {
             const {markCheckbox} = selected;
             this.collections.updateItem(selected.id, {markCheckbox});
         })
+
+        this.view.show();
+        this.view.$$('main_tab').show();
     }
 
     deleteFavorite(id){

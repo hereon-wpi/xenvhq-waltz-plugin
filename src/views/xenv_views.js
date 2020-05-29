@@ -285,15 +285,16 @@ function newDataSourceCollectionForm(config) {
 
 function newFavorites(config){
     return {
-        id:'favorites',
+        id: 'favorites',
         isolate: true,
+        type: 'clean',
         rows: [
             {
                 id: 'list',
                 view: 'list',
                 select: true,
                 template: '#name#',
-                on:{
+                on: {
                     onItemClick(id) {
                         config.root.selectFavorite(id);
                     }
