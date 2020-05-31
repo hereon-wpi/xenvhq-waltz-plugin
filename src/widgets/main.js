@@ -12,7 +12,7 @@ import {
 } from "widgets/xenv";
 import {kTangoRestContext} from "@waltz-controls/waltz-tango-rest-plugin";
 import {from, Subject} from "rxjs";
-import {groupBy, map, mergeMap, reduce} from "rxjs/operators"
+import {bufferTime, groupBy, map, mergeMap, reduce} from "rxjs/operators"
 import {BoundedReverseList} from "@waltz-controls/waltz-webix-extensions";
 import {kUserContext} from "@waltz-controls/waltz-user-context-plugin";
 
@@ -106,13 +106,10 @@ export default class XenvHqMainWidget extends WaltzWidget {
             save: favoritesProxy
         });
 
-        this.listen(update => {
-            kSubject.next(update);
-            //TODO error
-        }, kAnyTopic, `${kWidgetXenvHq}.status.subscription`);
-
         kSubject.pipe(
-            map(update => Object.assign(update, {data: update.data || `ERROR: ${update.error}`}))
+            map(update => Object.assign(update, {data: update.data || `ERROR: ${update.error}`})),
+            bufferTime(3000),
+            mergeMap(buffered => from(buffered))
         ).subscribe(update => {
             const id = `${update.host}/${update.device}`;
 
@@ -120,6 +117,11 @@ export default class XenvHqMainWidget extends WaltzWidget {
 
             this.view.$$('log').addFirst(Object.assign(update, {name}));
         })
+
+        this.listen(update => {
+            kSubject.next(update);
+            //TODO error
+        }, kAnyTopic, `${kWidgetXenvHq}.status.subscription`);
     }
 
     get view() {
