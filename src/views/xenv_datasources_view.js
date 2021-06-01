@@ -38,6 +38,12 @@ function newDataSourceForm(parent){
                 this.setValues({
                     src: `${this.elements['srcScheme'].getValue()}${this.elements['srcPath'].getValue()}`
                 },true);
+                const values = this.getValues();
+                Object.entries(values).filter(pair => pair[1].trim !== undefined)
+                    .forEach(([key, value]) => {
+                        values[key] = value.trim()
+                    })
+                this.setValues(values,true);
             }
         },
         elements: [
