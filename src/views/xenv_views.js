@@ -421,15 +421,12 @@ export function newXenvHqLeftPanel(config) {
                         {},
                         {
                             view: "icon",
-                            icon: "mdi mdi-star-half",
-                            tooltip: "Toggle favorites",
+                            icon: "mdi mdi-sort-alphabetical-variant",
+                            tooltip: "Sort SataSources",
                             maxWidth: 30,
+                            lastSortDir: 'asc',
                             click() {
-                                const $$favorites = this.getTopParentView().$$('favorites');
-                                if ($$favorites.isVisible())
-                                    $$favorites.hide();
-                                else
-                                    $$favorites.show();
+                                this.getTopParentView().$$('list').sort("#id#", this.lastSortDir = this.lastSortDir === 'asc' ? 'desc' : 'asc')
                             }
                         },
                         {
