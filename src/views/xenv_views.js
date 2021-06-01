@@ -386,9 +386,19 @@ export function newXenvHqLeftPanel(config) {
                 newDataSourceCollectionForm(config),
                 {
                     view: 'template',
-                    template: '<span class="webix_icon mdi mdi-star-half-full"></span> Favorite Collections presets',
+                    template: '<span class="hide_show_favorities"><span class="webix_icon mdi mdi-star-half-full"></span> Favorite Collections presets</span>',
                     borderless: true,
-                    type:'header'
+                    type:'header',
+                    onClick:{
+                        "hide_show_favorities":function(ev, id){
+                            const $$favorites = this.getTopParentView().$$('favorites');
+                            if ($$favorites.isVisible())
+                                $$favorites.hide();
+                            else
+                                $$favorites.show();
+                            return false; // blocks the default click behavior
+                        }
+                    }
                 },
                 newFavorites(config),
                 {
