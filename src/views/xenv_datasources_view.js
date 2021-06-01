@@ -48,21 +48,21 @@ function newDataSourceForm(parent){
         },
         elements: [
             {cols:[
-                    { view: "label", label: "src", maxWidth: 80 },
+                    { view: "label", required: true, label: "src", maxWidth: 80 },
                     {view: "combo", name: "srcScheme", maxWidth: 120, options: [
                             "tine:", "tango:", "predator:", "external:"
                         ], validate: webix.rules.isNotEmpty},
                     {view: "text", name: "srcPath"},
                 ]},
-            {view: "text", name: "nxPath", label: "nxPath", validate: webix.rules.isNotEmpty},
+            {view: "text", name: "nxPath", label: "nxPath", required: true, validate: webix.rules.isNotEmpty},
             {
-                view: "radio", name: "type", label: "type", options: [
+                view: "radio", name: "type", label: "type", required: true, options: [
                     "scalar", "spectrum", "log"
                 ], validate: webix.rules.isNotEmpty
             },
-            {view: "text", name: "pollRate", label: "pollRate", validate: webix.rules.isNumber},
+            {view: "text", name: "pollRate", label: "pollRate", required: true, validate: webix.rules.isNumber},
             {
-                view: "select", name: "dataType", label: "dataType", options: [
+                view: "select", name: "dataType", label: "dataType", required: true, options: [
                     "string", "int16", "int32", "int64", "uint16", "uint32", "uint64", "float32", "float64"
                 ]
             },
