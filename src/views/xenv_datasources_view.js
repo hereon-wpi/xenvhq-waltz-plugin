@@ -71,10 +71,11 @@ function newDataSourceForm(parent){
                             if (!$$form.validate()) return;
 
                             const obj = $$form.getValues();
-                            if (parent.$$("list").getSelectedId() == obj.id) {
-                                parent.updateDataSource(obj);
+                            if (parent.$$("list").getSelectedId() == obj.id &&
+                                parent.existsDataSource(obj.id)) {
+                                    parent.updateDataSource(obj);
                             } else {
-                                obj.id = webix.uid();
+                                obj.id = obj.id ? obj.id : webix.uid();
                                 parent.addDataSource(obj);
                             }
                         }
@@ -218,22 +219,25 @@ const datasources_view = webix.protoUI({
                 .execute(JSON.stringify(dataSource))
                 .toPromise())
     },
+    existsDataSource(id){
+        return this.datasources.exists(id)
+    },
     addDataSource(dataSource) {
         return this.processDataSource("insert",dataSource)
             .then(() => {
-                return this.$$('list').add(dataSource)
+                return this.datasources.add(dataSource)
             })
     },
     updateDataSource(dataSource){
         return this.processDataSource("update", dataSource)
             .then(() => {
-                this.$$('list').updateItem(dataSource.id, dataSource);
+                this.datasources.updateItem(dataSource.id, dataSource);
             })
     },
     deleteDataSource(dataSource){
         return this.processDataSource("delete", dataSource).
             then(() => {
-            this.$$('list').remove(dataSource.id);
+            this.datasources.remove(dataSource.id);
         })
     },
     /**
