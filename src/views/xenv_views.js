@@ -287,6 +287,7 @@ function newFavorites(config){
     return {
         id: 'favorites',
         isolate: true,
+        hidden: true,
         type: 'clean',
         rows: [
             {
