@@ -190,11 +190,22 @@ function newSort() {
     }
 }
 
+function newHeader(){
+    return {
+        view: "template",
+        id:'header',
+        height: 30,
+        type: 'header',
+        template: "DataSources collection: #id#"
+    }
+}
+
 const datasources_view = webix.protoUI({
     name: "datasources_view",
     _ui(){
         return {
             rows: [
+                newHeader(),
                 newSort(),//TODO replace with smart filter
                 newSearch("listDataSources", filterDataSourcesList),
                 newDataSourcesList(this),
@@ -270,6 +281,9 @@ const datasources_view = webix.protoUI({
         this.enable();
         if (this.collectionId === collectionId) return;
         this.collectionId = collectionId;
+        this.$$('header').setValues({
+            id:collectionId
+        });
         this.datasources.clearAll();
         this.datasources.parse(this.getTangoRest()
             .then(rest => rest.newTangoAttribute(TangoId.fromDeviceId(this.config.configurationManager.id).setName('datasources'))
