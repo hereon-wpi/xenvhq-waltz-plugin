@@ -207,7 +207,7 @@ const datasources_view = webix.protoUI({
             rows: [
                 newHeader(),
                 newSort(),//TODO replace with smart filter
-                newSearch("listDataSources", filterDataSourcesList),
+                newSearch("list", filterDataSourcesList),
                 newDataSourcesList(this),
                 newDataSourceForm(this)
             ]
