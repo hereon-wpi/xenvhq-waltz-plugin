@@ -48,11 +48,11 @@ function newDataSourceForm(parent){
         },
         elements: [
             {cols:[
-                    { view: "label", required: true, label: "src", maxWidth: 80 },
+                    { view: "label", label: "src ", maxWidth: 80 },
                     {view: "combo", name: "srcScheme", maxWidth: 120, options: [
                             "tine:", "tango:", "predator:", "external:"
                         ], validate: webix.rules.isNotEmpty},
-                    {view: "text", name: "srcPath"},
+                    {view: "text", required:true, name: "srcPath"},
                 ]},
             {view: "text", name: "nxPath", label: "nxPath", required: true, validate: webix.rules.isNotEmpty},
             {
