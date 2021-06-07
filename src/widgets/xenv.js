@@ -324,8 +324,9 @@ export class XenvHqWidget extends WaltzWidget {
 
 
     async run() {
-        const tab = this.view || this.render();
         this.app.getWidget('widget:main').mainView.removeView('widget:dashboard');
+
+        const tab = this.view || this.render();
         tab.showProgress();
 
 
